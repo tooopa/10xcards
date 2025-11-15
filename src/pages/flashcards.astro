@@ -1,0 +1,16 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { Flashcard } from "@/components/Flashcard";
+---
+
+<Layout title="Flashcards - 10xCards">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-8">Sample Flashcard</h1>
+    <Flashcard
+      question="What hook is used to manage state in a functional React component?"
+      answer="The useState hook."
+      client:load
+    />
+  </div>
+</Layout>
+
