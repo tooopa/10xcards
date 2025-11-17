@@ -13,12 +13,44 @@ export type FlashcardProposalViewModel = Omit<FlashcardProposalDto, "source"> & 
   source: "ai-full" | "ai-edited";
 };
 
-export function FlashcardGenerationView() {
+interface FlashcardGenerationViewProps {
+  deckId?: string | null;
+}
+
+export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps) {
   const [textValue, setTextValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [generationId, setGenerationId] = useState<number | null>(null);
   const [flashcards, setFlashcards] = useState<FlashcardProposalViewModel[]>([]);
+  const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [availableDecks, setAvailableDecks] = useState<{id: string, name: string}[]>([]);
+
+  useEffect(() => {
+    fetchAvailableDecks();
+  }, []);
+
+  useEffect(() => {
+    if (deckId) {
+      setSelectedDeckId(deckId);
+    } else if (availableDecks.length > 0 && !selectedDeckId) {
+      // Auto-select first deck if none selected
+      setSelectedDeckId(availableDecks[0].id);
+    }
+  }, [deckId, availableDecks]);
+
+  const fetchAvailableDecks = async () => {
+    try {
+      const response = await fetch('/api/v1/decks');
+      if (!response.ok) {
+        throw new Error('Failed to fetch decks');
+      }
+      const data = await response.json();
+      setAvailableDecks(data.data.map((deck: any) => ({ id: deck.id, name: deck.name })));
+    } catch (error) {
+      console.error('Could not fetch decks:', error);
+    }
+  };
 
   const handleTextChange = (value: string) => {
     setTextValue(value);
@@ -33,7 +65,11 @@ export function FlashcardGenerationView() {
       const response = await fetch("/api/generations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_text: textValue }),
+        body: JSON.stringify({
+          source_text: textValue,
+          model: "openai/gpt-4o-mini", // Default model for MVP
+          deck_id: selectedDeckId
+        }),
       });
 
       if (!response.ok) {
@@ -81,11 +117,30 @@ export function FlashcardGenerationView() {
     <div className="space-y-6">
       {errorMessage && <ErrorNotification message={errorMessage} />}
 
+      {/* Deck Selector */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          Select Deck for Generated Flashcards
+        </label>
+        <select
+          value={selectedDeckId}
+          onChange={(e) => setSelectedDeckId(e.target.value)}
+          className="w-full px-3 py-2 border border-input bg-background rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          disabled={isLoading}
+        >
+          {availableDecks.map((deck) => (
+            <option key={deck.id} value={deck.id}>
+              {deck.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <TextInputArea value={textValue} onChange={handleTextChange} disabled={isLoading} />
 
       <GenerateButton
         onClick={handleGenerateFlashcards}
-        disabled={isLoading || textValue.length < 1000 || textValue.length > 10000}
+        disabled={isLoading || textValue.length < 1000 || textValue.length > 10000 || !selectedDeckId}
         isLoading={isLoading}
       />
 

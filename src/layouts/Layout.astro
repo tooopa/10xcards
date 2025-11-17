@@ -1,6 +1,8 @@
 ---
 import "../styles/global.css";
 import { Toaster } from "@/components/ui/sonner";
+import { AppProvider } from "@/contexts/AppContext";
+import { Navigation } from "@/components/Navigation";
 
 interface Props {
   title?: string;
@@ -19,7 +21,10 @@ const { title = "10xCards" } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
-    <slot />
+    <AppProvider client:load>
+      <Navigation client:load />
+      <slot />
+    </AppProvider>
     <Toaster richColors closeButton client:only="react" />
   </body>
 </html>

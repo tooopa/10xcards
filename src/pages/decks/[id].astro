@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import DeckView from "../../components/DeckView.tsx";
+
+export async function getStaticPaths() {
+  // For now, we'll use dynamic rendering since we don't have static deck data
+  return [];
+}
+
+const { id } = Astro.params;
+---
+
+<Layout title={`Deck - 10xCards`}>
+  <DeckView deckId={id} client:load />
+</Layout>

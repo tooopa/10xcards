@@ -24,30 +24,6 @@
 -- ============================================================================
 
 -- ============================================================================
--- SECTION 1: CLEANUP (Drop existing structure if any)
--- ============================================================================
-
--- drop existing tables if they exist
--- note: we preserve auth.users table as it's managed by supabase
-drop table if exists public.flashcard_tags cascade;
-drop table if exists public.generation_error_logs cascade;
-drop table if exists public.generations cascade;
-drop table if exists public.reviews cascade;
-drop table if exists public.tags cascade;
-drop table if exists public.flashcards cascade;
-drop table if exists public.decks cascade;
-
--- drop existing functions and triggers if they exist
-drop trigger if exists on_user_created on auth.users;
-drop trigger if exists update_decks_updated_at on public.decks;
-drop trigger if exists update_generations_updated_at on public.generations;
-drop function if exists create_default_deck_for_user() cascade;
-drop function if exists update_updated_at_column() cascade;
-
--- drop extensions if needed (we'll recreate them)
--- pg_trgm is optional but useful for fuzzy text search
-
--- ============================================================================
 -- SECTION 2: EXTENSIONS
 -- ============================================================================
 
@@ -406,7 +382,7 @@ create trigger on_user_created
   for each row
   execute function create_default_deck_for_user();
 
-comment on trigger on_user_created on auth.users is 'automatically creates default deck when user registers';
+-- comment on trigger on_user_created on auth.users is 'automatically creates default deck when user registers';
 
 -- ----------------------------------------------------------------------------
 -- function: update_updated_at_column

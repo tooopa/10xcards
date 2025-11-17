@@ -1,0 +1,22 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import TagManagement from "../../components/TagManagement.tsx";
+---
+
+<Layout title="Tag Management - 10xCards">
+  <div class="min-h-screen bg-background">
+    <div class="container mx-auto px-4 py-8">
+      <div class="mb-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <a href="/" className="hover:text-foreground transition-colors">Dashboard</a>
+          <span>/</span>
+          <span className="text-foreground">Tag Management</span>
+        </nav>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Tag Management</h1>
+        <p className="text-muted-foreground">Create and manage tags for organizing your flashcards</p>
+      </div>
+
+      <TagManagement client:load />
+    </div>
+  </div>
+</Layout>

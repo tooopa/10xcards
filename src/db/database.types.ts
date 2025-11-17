@@ -20,44 +20,13 @@ export interface Database {
   };
   public: {
     Tables: {
-      deck_collaborators: {
-        Row: {
-          created_at: string;
-          deck_id: number;
-          role: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          deck_id: number;
-          role: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          deck_id?: number;
-          role?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "deck_collaborators_deck_id_fkey";
-            columns: ["deck_id"];
-            isOneToOne: false;
-            referencedRelation: "decks";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       decks: {
         Row: {
           created_at: string;
           deleted_at: string | null;
           description: string | null;
           id: number;
+          is_default: boolean;
           name: string;
           updated_at: string;
           user_id: string;
@@ -68,6 +37,7 @@ export interface Database {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          is_default?: boolean;
           name: string;
           updated_at?: string;
           user_id: string;
@@ -78,6 +48,7 @@ export interface Database {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          is_default?: boolean;
           name?: string;
           updated_at?: string;
           user_id?: string;
@@ -160,17 +131,17 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: "fk_flashcards_deck";
-            columns: ["deck_id"];
-            isOneToOne: false;
-            referencedRelation: "decks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "fk_generation";
+            foreignKeyName: "fk_flashcards_generation";
             columns: ["generation_id"];
             isOneToOne: false;
             referencedRelation: "generations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "flashcards_deck_id_fkey";
+            columns: ["deck_id"];
+            isOneToOne: false;
+            referencedRelation: "decks";
             referencedColumns: ["id"];
           },
         ];
@@ -210,9 +181,10 @@ export interface Database {
       };
       generations: {
         Row: {
-          accepted_edited_count: number | null;
-          accepted_unedited_count: number | null;
+          accepted_edited_count: number;
+          accepted_unedited_count: number;
           created_at: string;
+          deck_id: number;
           generated_count: number;
           generation_duration: number;
           id: number;
@@ -223,9 +195,10 @@ export interface Database {
           user_id: string;
         };
         Insert: {
-          accepted_edited_count?: number | null;
-          accepted_unedited_count?: number | null;
+          accepted_edited_count?: number;
+          accepted_unedited_count?: number;
           created_at?: string;
+          deck_id: number;
           generated_count: number;
           generation_duration: number;
           id?: number;
@@ -236,9 +209,10 @@ export interface Database {
           user_id: string;
         };
         Update: {
-          accepted_edited_count?: number | null;
-          accepted_unedited_count?: number | null;
+          accepted_edited_count?: number;
+          accepted_unedited_count?: number;
           created_at?: string;
+          deck_id?: number;
           generated_count?: number;
           generation_duration?: number;
           id?: number;
@@ -248,60 +222,12 @@ export interface Database {
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
-      };
-      reviews: {
-        Row: {
-          created_at: string;
-          deleted_at: string | null;
-          due_at: string;
-          ease_factor: number;
-          flashcard_id: number;
-          grade: number | null;
-          id: number;
-          interval: number;
-          last_review_at: string | null;
-          repetitions: number;
-          updated_at: string;
-          user_id: string;
-          version: number;
-        };
-        Insert: {
-          created_at?: string;
-          deleted_at?: string | null;
-          due_at?: string;
-          ease_factor?: number;
-          flashcard_id: number;
-          grade?: number | null;
-          id?: number;
-          interval?: number;
-          last_review_at?: string | null;
-          repetitions?: number;
-          updated_at?: string;
-          user_id: string;
-          version?: number;
-        };
-        Update: {
-          created_at?: string;
-          deleted_at?: string | null;
-          due_at?: string;
-          ease_factor?: number;
-          flashcard_id?: number;
-          grade?: number | null;
-          id?: number;
-          interval?: number;
-          last_review_at?: string | null;
-          repetitions?: number;
-          updated_at?: string;
-          user_id?: string;
-          version?: number;
-        };
         Relationships: [
           {
-            foreignKeyName: "reviews_flashcard_id_fkey";
-            columns: ["flashcard_id"];
+            foreignKeyName: "generations_deck_id_fkey";
+            columns: ["deck_id"];
             isOneToOne: false;
-            referencedRelation: "flashcards";
+            referencedRelation: "decks";
             referencedColumns: ["id"];
           },
         ];

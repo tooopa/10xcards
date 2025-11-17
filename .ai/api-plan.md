@@ -1,1720 +1,927 @@
-# REST API Plan - 10x-cards MVP
+# REST API Plan v1.2
 
 ## 1. Overview
 
-This REST API plan is designed for the 10x-cards application, which enables users to create and manage educational flashcards with AI assistance. The API follows RESTful principles and integrates with Supabase for authentication and database operations, and OpenRouter.ai for AI-powered flashcard generation.
+This REST API plan provides a comprehensive backend architecture for the 10x-cards MVP, implementing flashcard management with AI generation capabilities. The API is built on Supabase (PostgreSQL + Auth) with OpenRouter.ai for AI features.
 
-**Base URL**: `/api/v1`
-
-**Authentication**: All endpoints (except authentication) require a valid JWT token from Supabase Auth in the `Authorization: Bearer <token>` header.
+**Version**: 1.2  
+**API Base URL**: `/api/v1`  
+**Authentication**: JWT Bearer tokens (Supabase Auth)  
+**Content-Type**: `application/json`
 
 ## 2. Resources
 
-| Resource | Database Table | Description |
-|----------|---------------|-------------|
-| Decks | `decks` | Collections of flashcards organized by users |
-| Flashcards | `flashcards` | Individual flashcards with front/back content |
-| Tags | `tags` | Labels for organizing flashcards (global or deck-scoped) |
-| Reviews | `reviews` | Spaced-repetition review history and scheduling |
-| Generations | `generations` | AI generation sessions and metadata |
-| Users | `auth.users` (Supabase) | User accounts and authentication |
+- **Auth**: User registration, login, logout, and account management via Supabase Auth.
+- **Decks**: User flashcard decks, including default "Uncategorized" deck and deck deletion with flashcard migration.
+- **Flashcards**: Individual flashcards with manual/AI creation, editing, and tagging.
+- **Tags**: Global and deck-scoped tags for categorizing flashcards.
+- **Generations**: AI flashcard generation, including generation requests, acceptance, and history.
 
-## 3. Authentication Endpoints
+## 3. API Endpoints
 
-Authentication is handled by Supabase Auth. The frontend will interact directly with Supabase Auth endpoints.
+### 3.1 Authentication (Supabase Auth)
 
-### 3.1 Register
+These endpoints are handled by Supabase Auth directly, not custom API endpoints.
 
-**Method**: `POST`  
-**Path**: `/auth/v1/signup` (Supabase endpoint)  
-**Description**: Create a new user account
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePassword123!"
-}
-```
-
-**Business Logic**:
-- After successful user creation, automatically create a default "Uncategorized" deck
-- This deck cannot be deleted or renamed
-- Used as destination for flashcards from deleted decks
-- Marked with special flag `is_default = true`
-
-**Success Response** (200 OK):
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "expires_in": 3600,
-  "refresh_token": "...",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "created_at": "2025-11-15T10:00:00Z"
-  }
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Invalid email format or weak password
-- `409 Conflict`: Email already registered
-
-**Implementation Note**: A database trigger or post-registration hook should automatically create the default "Uncategorized" deck for the new user.
-
-### 3.2 Login
-
-**Method**: `POST`  
-**Path**: `/auth/v1/token?grant_type=password` (Supabase endpoint)  
-**Description**: Authenticate and receive access token
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePassword123!"
-}
-```
-
-**Success Response** (200 OK):
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "expires_in": 3600,
-  "refresh_token": "...",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com"
-  }
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Invalid credentials
-- `401 Unauthorized`: Wrong email or password
-
-### 3.3 Logout
-
-**Method**: `POST`  
-**Path**: `/auth/v1/logout` (Supabase endpoint)  
-**Description**: Invalidate current session  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (204 No Content)
-
-### 3.4 Delete Account
-
-**Method**: `DELETE`  
-**Path**: `/api/v1/users/me`  
-**Description**: Delete user account and all associated data (decks, flashcards, reviews)  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (204 No Content)
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-
-## 4. Deck Endpoints
-
-### 4.1 List Decks
-
-**Method**: `GET`  
-**Path**: `/api/v1/decks`  
-**Description**: Retrieve all decks for authenticated user  
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `limit` (integer, optional, default: 50, max: 100): Number of decks to return
-- `offset` (integer, optional, default: 0): Pagination offset
-- `sort` (string, optional, default: "created_at"): Sort field (`created_at`, `updated_at`, `name`)
-- `order` (string, optional, default: "desc"): Sort order (`asc`, `desc`)
-
-**Success Response** (200 OK):
-```json
-{
-  "data": [
+- **POST /auth/v1/signup**
+  - **Description**: Register a new user (Supabase native endpoint).
+  - **Request Body**:
+    ```json
     {
-      "id": 2,
-      "user_id": "uuid",
+      "email": "string (valid email, required)",
+      "password": "string (min 6 chars, required)"
+    }
+    ```
+  - **Response Body** (201 Created):
+    ```json
+    {
+      "user": {
+        "id": "uuid",
+        "email": "string",
+        "created_at": "timestamp"
+      },
+      "session": {
+        "access_token": "string",
+        "refresh_token": "string",
+        "expires_in": "integer"
+      }
+    }
+    ```
+  - **Business Logic**: Database trigger automatically creates default "Uncategorized" deck.
+  - **Error Codes**: 400 Bad Request (invalid email/weak password), 422 Unprocessable Entity (email already exists)
+
+- **POST /auth/v1/token?grant_type=password**
+  - **Description**: Login existing user (Supabase native endpoint).
+  - **Request Body**:
+    ```json
+    {
+      "email": "string (required)",
+      "password": "string (required)"
+    }
+    ```
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "access_token": "string",
+      "refresh_token": "string",
+      "expires_in": "integer",
+      "user": {
+        "id": "uuid",
+        "email": "string"
+      }
+    }
+    ```
+  - **Error Codes**: 400 Bad Request (invalid credentials)
+
+- **POST /auth/v1/logout**
+  - **Description**: Logout user (Supabase native endpoint).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body**: 204 No Content
+  - **Error Codes**: 401 Unauthorized
+
+- **DELETE /api/v1/user**
+  - **Description**: Delete user account (custom endpoint with cascade deletion).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body**: 204 No Content
+  - **Business Logic**: Cascades to delete all user's decks, flashcards, tags, generations via RLS.
+  - **Error Codes**: 401 Unauthorized
+
+### 3.2 Decks
+
+- **GET /api/v1/decks**
+  - **Description**: Retrieve list of user's decks (excluding soft-deleted).
+  - **Query Parameters**: 
+    - `sort` (created_at, updated_at, name) - default: created_at
+    - `order` (asc, desc) - default: desc
+    - `search` (string) - full-text search on name/description
+    - `page` (integer, min 1) - default: 1
+    - `limit` (integer, min 1, max 100) - default: 20
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "data": [
+        {
+          "id": "string",
+          "name": "string",
+          "description": "string|null",
+          "visibility": "private",
+          "is_default": "boolean",
+          "flashcard_count": "integer",
+          "created_at": "ISO8601 timestamp",
+          "updated_at": "ISO8601 timestamp"
+        }
+      ],
+      "pagination": {
+        "page": "integer",
+        "limit": "integer",
+        "total": "integer",
+        "total_pages": "integer"
+      }
+    }
+    ```
+  - **Error Codes**: 401 Unauthorized, 400 Bad Request (invalid query params)
+
+- **GET /api/v1/decks/default**
+  - **Description**: Retrieve user's default "Uncategorized" deck.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "id": "string",
       "name": "Uncategorized",
-      "description": "Default deck for uncategorized flashcards",
+      "description": "string|null",
       "visibility": "private",
       "is_default": true,
-      "created_at": "2025-11-01T09:00:00Z",
-      "updated_at": "2025-11-01T09:00:00Z",
-      "flashcard_count": 3
-    },
+      "flashcard_count": "integer",
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
+    }
+    ```
+  - **Error Codes**: 401 Unauthorized, 404 Not Found (should never happen if trigger works)
+
+- **GET /api/v1/decks/:id**
+  - **Description**: Retrieve details of a specific deck.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
     {
-      "id": 1,
-      "user_id": "uuid",
-      "name": "Biology 101",
-      "description": "Introduction to cellular biology",
+      "id": "string",
+      "name": "string",
+      "description": "string|null",
+      "visibility": "private",
+      "is_default": "boolean",
+      "flashcard_count": "integer",
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
+    }
+    ```
+  - **Error Codes**: 401 Unauthorized, 404 Not Found
+
+- **POST /api/v1/decks**
+  - **Description**: Create a new deck.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
+    {
+      "name": "string (1-100 chars, required)",
+      "description": "string (optional, max 5000 chars)"
+    }
+    ```
+  - **Response Body** (201 Created):
+    ```json
+    {
+      "id": "string",
+      "name": "string",
+      "description": "string|null",
       "visibility": "private",
       "is_default": false,
-      "created_at": "2025-11-01T10:00:00Z",
-      "updated_at": "2025-11-10T15:30:00Z",
-      "flashcard_count": 25
+      "flashcard_count": 0,
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
     }
-  ],
-  "pagination": {
-    "total": 100,
-    "limit": 50,
-    "offset": 0,
-    "has_more": true
-  }
-}
-```
+    ```
+  - **Validation**:
+    - Name must be unique per user (enforced by DB constraint)
+    - is_default automatically set to false (RLS prevents manual true)
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors)
+    - 401 Unauthorized
+    - 409 Conflict (duplicate deck name)
 
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-
-### 4.2 Get Default Deck
-
-**Method**: `GET`  
-**Path**: `/api/v1/decks/default`  
-**Description**: Retrieve the user's default "Uncategorized" deck  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 2,
-  "user_id": "uuid",
-  "name": "Uncategorized",
-  "description": "Default deck for uncategorized flashcards",
-  "visibility": "private",
-  "is_default": true,
-  "created_at": "2025-11-01T09:00:00Z",
-  "updated_at": "2025-11-01T09:00:00Z",
-  "flashcard_count": 3
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Default deck not found (should never happen if user registration is correct)
-
-### 4.3 Get Deck by ID
-
-**Method**: `GET`  
-**Path**: `/api/v1/decks/:id`  
-**Description**: Retrieve a specific deck  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 1,
-  "user_id": "uuid",
-  "name": "Biology 101",
-  "description": "Introduction to cellular biology",
-  "visibility": "private",
-  "is_default": false,
-  "created_at": "2025-11-01T10:00:00Z",
-  "updated_at": "2025-11-10T15:30:00Z",
-  "flashcard_count": 25
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Deck does not exist or does not belong to user
-
-### 4.4 Create Deck
-
-**Method**: `POST`  
-**Path**: `/api/v1/decks`  
-**Description**: Create a new deck  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "name": "Biology 101",
-  "description": "Introduction to cellular biology"
-}
-```
-
-**Validation**:
-- `name`: Required, 1-100 characters, must be unique for the user
-- `description`: Optional, max 5000 characters
-
-**Business Logic**:
-- `is_default` is automatically set to `false` (only registration can create default deck)
-- Cannot create a deck named "Uncategorized" (reserved for default deck)
-
-**Success Response** (201 Created):
-```json
-{
-  "id": 1,
-  "user_id": "uuid",
-  "name": "Biology 101",
-  "description": "Introduction to cellular biology",
-  "visibility": "private",
-  "is_default": false,
-  "created_at": "2025-11-01T10:00:00Z",
-  "updated_at": "2025-11-01T10:00:00Z",
-  "flashcard_count": 0
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Validation error (name too long, empty name, reserved name, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `409 Conflict`: Deck name already exists for this user
-
-### 4.5 Update Deck
-
-**Method**: `PATCH`  
-**Path**: `/api/v1/decks/:id`  
-**Description**: Update deck details  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body** (all fields optional):
-```json
-{
-  "name": "Advanced Biology",
-  "description": "Updated description"
-}
-```
-
-**Validation**:
-- `name`: 1-100 characters if provided, must be unique for the user
-- `description`: Max 5000 characters if provided
-- Cannot update the default "Uncategorized" deck (where `is_default = true`)
-- Cannot rename to "Uncategorized" (reserved name)
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 1,
-  "user_id": "uuid",
-  "name": "Advanced Biology",
-  "description": "Updated description",
-  "visibility": "private",
-  "is_default": false,
-  "created_at": "2025-11-01T10:00:00Z",
-  "updated_at": "2025-11-15T10:00:00Z",
-  "flashcard_count": 25
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Validation error (reserved name, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `403 Forbidden`: Cannot modify default "Uncategorized" deck
-- `404 Not Found`: Deck does not exist or does not belong to user
-- `409 Conflict`: Deck name already exists for this user
-
-### 4.6 Delete Deck
-
-**Method**: `DELETE`  
-**Path**: `/api/v1/decks/:id`  
-**Description**: Delete a deck and move all flashcards to "Uncategorized" deck  
-**Headers**: `Authorization: Bearer <token>`
-
-**Business Logic**:
-1. Verify deck exists and belongs to user
-2. Check if deck is the default "Uncategorized" deck (`is_default = true`) - cannot be deleted
-3. Get user's "Uncategorized" deck ID
-4. For each flashcard in the deleted deck:
-   - Move flashcard to "Uncategorized" deck (`deck_id` updated)
-   - Create or get tag `#deleted-from-<deck_name>` (deck-scoped, in Uncategorized deck)
-   - Add this tag to the flashcard via `flashcard_tags` junction table
-5. Soft-delete the deck (set `deleted_at` timestamp)
-
-**Transaction**: All operations must be performed in a database transaction to ensure atomicity
-
-**Example**: Deleting deck "Biology 101" with 5 flashcards:
-- All 5 flashcards moved to "Uncategorized"
-- Tag "#deleted-from-Biology 101" created (if doesn't exist)
-- Tag "#deleted-from-Biology 101" added to all 5 flashcards
-- Deck "Biology 101" is soft-deleted
-
-**Success Response** (200 OK):
-```json
-{
-  "deck_deleted": true,
-  "deck_name": "Biology 101",
-  "flashcards_moved": 5,
-  "destination_deck_id": 2,
-  "destination_deck_name": "Uncategorized",
-  "tag_created": "#deleted-from-Biology 101",
-  "tag_id": 15
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `403 Forbidden`: Cannot delete the default "Uncategorized" deck
-- `404 Not Found`: Deck does not exist or does not belong to user
-- `500 Internal Server Error`: Failed to move flashcards or create tags (transaction rolled back)
-
-## 5. Flashcard Endpoints
-
-### 5.1 List Flashcards
-
-**Method**: `GET`  
-**Path**: `/api/v1/flashcards`  
-**Description**: Retrieve flashcards for authenticated user  
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `deck_id` (integer, optional): Filter by deck ID
-- `source` (string, optional): Filter by source (`ai-full`, `ai-edited`, `manual`)
-- `tag_id` (integer, optional): Filter by tag ID
-- `search` (string, optional): Full-text search in front and back
-- `limit` (integer, optional, default: 50, max: 100): Number of flashcards to return
-- `offset` (integer, optional, default: 0): Pagination offset
-- `sort` (string, optional, default: "created_at"): Sort field (`created_at`, `updated_at`)
-- `order` (string, optional, default: "desc"): Sort order (`asc`, `desc`)
-
-**Success Response** (200 OK):
-```json
-{
-  "data": [
+- **PATCH /api/v1/decks/:id**
+  - **Description**: Update a deck (name and/or description only).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
     {
-      "id": 1,
-      "deck_id": 1,
-      "user_id": "uuid",
-      "front": "What is the powerhouse of the cell?",
-      "back": "The mitochondria",
-      "source": "ai-full",
-      "generation_id": 5,
-      "created_at": "2025-11-01T10:00:00Z",
-      "updated_at": "2025-11-01T10:00:00Z",
+      "name": "string (1-100 chars, optional)",
+      "description": "string (optional, max 5000 chars, nullable)"
+    }
+    ```
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "id": "string",
+      "name": "string",
+      "description": "string|null",
+      "visibility": "private",
+      "is_default": "boolean",
+      "flashcard_count": "integer",
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
+    }
+    ```
+  - **Business Logic**:
+    - Cannot change is_default (enforced by RLS)
+    - Cannot rename default deck to non-"Uncategorized" (enforced by DB constraint)
+    - updated_at automatically updated by trigger
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors, attempting to rename default deck)
+    - 401 Unauthorized
+    - 404 Not Found
+    - 409 Conflict (duplicate deck name)
+
+- **DELETE /api/v1/decks/:id**
+  - **Description**: Delete deck with automatic flashcard migration to default deck.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "message": "Deck deleted successfully",
+      "migrated_flashcards_count": "integer",
+      "migration_tag": {
+        "id": "string",
+        "name": "string (format: #deleted-from-{deck_name})"
+      }
+    }
+    ```
+  - **Business Logic** (Transaction):
+    1. Verify deck exists and belongs to user (via RLS)
+    2. Verify deck is not default (is_default=false)
+    3. Get user's default deck ID
+    4. Count flashcards to migrate
+    5. Create tag `#deleted-from-{deck_name}` (scope='deck', assigned to default deck)
+    6. Update all flashcards: set deck_id to default deck
+    7. Add migration tag to all migrated flashcards
+    8. Soft-delete deck (set deleted_at)
+    9. Commit transaction
+  - **Error Codes**: 
+    - 400 Bad Request (attempting to delete default deck)
+    - 401 Unauthorized
+    - 404 Not Found
+    - 500 Internal Server Error (transaction failure)
+
+### 3.3 Flashcards
+
+- **GET /api/v1/flashcards**
+  - **Description**: Retrieve list of user's flashcards with filtering and search.
+  - **Query Parameters**: 
+    - `deck_id` (string) - filter by deck
+    - `source` (manual, ai-full, ai-edited) - filter by source
+    - `tag_id` (string) - filter by tag (supports single tag only in MVP)
+    - `search` (string) - full-text search on front/back
+    - `sort` (created_at, updated_at) - default: created_at
+    - `order` (asc, desc) - default: desc
+    - `page` (integer, min 1) - default: 1
+    - `limit` (integer, min 1, max 100) - default: 20
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "data": [
+        {
+          "id": "string",
+          "deck_id": "string",
+          "front": "string",
+          "back": "string",
+          "source": "manual|ai-full|ai-edited",
+          "generation_id": "string|null",
+          "created_at": "ISO8601 timestamp",
+          "updated_at": "ISO8601 timestamp",
+          "tags": [
+            {
+              "id": "string",
+              "name": "string",
+              "scope": "global|deck"
+            }
+          ]
+        }
+      ],
+      "pagination": {
+        "page": "integer",
+        "limit": "integer",
+        "total": "integer",
+        "total_pages": "integer"
+      }
+    }
+    ```
+  - **Business Logic**:
+    - All filters applied as AND conditions
+    - Excludes soft-deleted flashcards (deleted_at IS NULL)
+    - Full-text search uses tsv column with GIN index
+  - **Error Codes**: 401 Unauthorized, 400 Bad Request (invalid parameters)
+
+- **GET /api/v1/flashcards/:id**
+  - **Description**: Retrieve details of a specific flashcard.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "id": "string",
+      "deck_id": "string",
+      "front": "string",
+      "back": "string",
+      "source": "manual|ai-full|ai-edited",
+      "generation_id": "string|null",
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp",
       "tags": [
         {
-          "id": 1,
-          "name": "biology",
-          "scope": "global"
+          "id": "string",
+          "name": "string",
+          "scope": "global|deck",
+          "deck_id": "string|null"
         }
       ]
     }
-  ],
-  "pagination": {
-    "total": 150,
-    "limit": 50,
-    "offset": 0,
-    "has_more": true
-  }
-}
-```
+    ```
+  - **Error Codes**: 401 Unauthorized, 404 Not Found
 
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `400 Bad Request`: Invalid query parameters
-
-### 5.2 Get Flashcard by ID
-
-**Method**: `GET`  
-**Path**: `/api/v1/flashcards/:id`  
-**Description**: Retrieve a specific flashcard  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 1,
-  "deck_id": 1,
-  "user_id": "uuid",
-  "front": "What is the powerhouse of the cell?",
-  "back": "The mitochondria",
-  "source": "ai-full",
-  "generation_id": 5,
-  "created_at": "2025-11-01T10:00:00Z",
-  "updated_at": "2025-11-01T10:00:00Z",
-  "tags": [
+- **POST /api/v1/flashcards**
+  - **Description**: Create a new flashcard manually.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
     {
-      "id": 1,
-      "name": "biology",
-      "scope": "global"
+      "deck_id": "string (required)",
+      "front": "string (1-200 chars, required)",
+      "back": "string (1-500 chars, required)"
     }
-  ]
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Flashcard does not exist or does not belong to user
-
-### 5.3 Create Flashcard (Manual)
-
-**Method**: `POST`  
-**Path**: `/api/v1/flashcards`  
-**Description**: Create a flashcard manually  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "deck_id": 1,
-  "front": "What is photosynthesis?",
-  "back": "The process by which plants convert light energy into chemical energy",
-  "tag_ids": [1, 3]
-}
-```
-
-**Validation**:
-- `deck_id`: Required, must exist and belong to user
-- `front`: Required, 1-200 characters
-- `back`: Required, 1-500 characters
-- `tag_ids`: Optional, array of tag IDs (must be global or user's deck tags)
-
-**Business Logic**:
-- `source` is automatically set to `manual`
-- `generation_id` is NULL
-- Creates review record with default spaced-repetition values
-
-**Success Response** (201 Created):
-```json
-{
-  "id": 1,
-  "deck_id": 1,
-  "user_id": "uuid",
-  "front": "What is photosynthesis?",
-  "back": "The process by which plants convert light energy into chemical energy",
-  "source": "manual",
-  "generation_id": null,
-  "created_at": "2025-11-01T10:00:00Z",
-  "updated_at": "2025-11-01T10:00:00Z",
-  "tags": [
+    ```
+  - **Response Body** (201 Created):
+    ```json
     {
-      "id": 1,
-      "name": "biology",
-      "scope": "global"
+      "id": "string",
+      "deck_id": "string",
+      "front": "string",
+      "back": "string",
+      "source": "manual",
+      "generation_id": null,
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
     }
-  ]
-}
-```
+    ```
+  - **Business Logic**:
+    - source automatically set to "manual"
+    - Verify deck_id exists and belongs to user
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors, deck doesn't exist)
+    - 401 Unauthorized
 
-**Error Responses**:
-- `400 Bad Request`: Validation error (front/back too long, deck_id missing, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Deck does not exist or does not belong to user
-
-### 5.4 Update Flashcard
-
-**Method**: `PATCH`  
-**Path**: `/api/v1/flashcards/:id`  
-**Description**: Update flashcard content  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body** (all fields optional):
-```json
-{
-  "front": "Updated question?",
-  "back": "Updated answer",
-  "deck_id": 2
-}
-```
-
-**Validation**:
-- `front`: 1-200 characters if provided
-- `back`: 1-500 characters if provided
-- `deck_id`: Must exist and belong to user if provided
-
-**Business Logic**:
-- If flashcard was generated by AI (`source=ai-full`) and content is edited, `source` changes to `ai-edited`
-- `updated_at` is automatically updated
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 1,
-  "deck_id": 2,
-  "user_id": "uuid",
-  "front": "Updated question?",
-  "back": "Updated answer",
-  "source": "ai-edited",
-  "generation_id": 5,
-  "created_at": "2025-11-01T10:00:00Z",
-  "updated_at": "2025-11-15T10:00:00Z",
-  "tags": []
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Validation error
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Flashcard or deck does not exist or does not belong to user
-
-### 5.5 Delete Flashcard
-
-**Method**: `DELETE`  
-**Path**: `/api/v1/flashcards/:id`  
-**Description**: Soft-delete a flashcard (sets `deleted_at` timestamp)  
-**Headers**: `Authorization: Bearer <token>`
-
-**Business Logic**:
-- Flashcard is soft-deleted
-- Associated reviews are also soft-deleted
-- Tags associations are removed
-
-**Success Response** (204 No Content)
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Flashcard does not exist or does not belong to user
-
-### 5.6 Add Tags to Flashcard
-
-**Method**: `POST`  
-**Path**: `/api/v1/flashcards/:id/tags`  
-**Description**: Add tags to a flashcard  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "tag_ids": [1, 3, 5]
-}
-```
-
-**Validation**:
-- `tag_ids`: Required, array of tag IDs
-- Tags must be global or belong to user's deck
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 1,
-  "front": "What is photosynthesis?",
-  "back": "The process by which plants convert light energy into chemical energy",
-  "tags": [
+- **PATCH /api/v1/flashcards/:id**
+  - **Description**: Update a flashcard (changes source to 'ai-edited' if applicable).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
     {
-      "id": 1,
-      "name": "biology",
-      "scope": "global"
-    },
-    {
-      "id": 3,
-      "name": "important",
-      "scope": "deck"
+      "deck_id": "string (optional)",
+      "front": "string (1-200 chars, optional)",
+      "back": "string (1-500 chars, optional)"
     }
-  ]
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Invalid tag IDs
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Flashcard or tag does not exist
-
-### 5.7 Remove Tag from Flashcard
-
-**Method**: `DELETE`  
-**Path**: `/api/v1/flashcards/:id/tags/:tag_id`  
-**Description**: Remove a tag from a flashcard  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (204 No Content)
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Flashcard or tag association does not exist
-
-## 6. Generation Endpoints
-
-### 6.1 Generate Flashcards
-
-**Method**: `POST`  
-**Path**: `/api/v1/generations`  
-**Description**: Generate flashcard suggestions using AI  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "source_text": "Photosynthesis is the process by which green plants... [1000-10000 characters]",
-  "model": "openai/gpt-4",
-  "deck_id": 1
-}
-```
-
-**Validation**:
-- `source_text`: Required, 1000-10000 characters
-- `model`: Required, valid model identifier from OpenRouter.ai
-- `deck_id`: Required, must exist and belong to user
-
-**Business Logic**:
-1. Validate text length
-2. Generate hash of source_text for deduplication
-3. Send to OpenRouter.ai API with structured prompt
-4. Parse response into flashcard suggestions
-5. Save generation metadata (model, duration, count)
-6. Return suggestions without saving them as flashcards
-
-**Success Response** (201 Created):
-```json
-{
-  "id": 5,
-  "user_id": "uuid",
-  "model": "openai/gpt-4",
-  "generated_count": 8,
-  "source_text_hash": "abc123...",
-  "source_text_length": 2500,
-  "generation_duration": 3500,
-  "created_at": "2025-11-15T10:00:00Z",
-  "suggestions": [
+    ```
+  - **Response Body** (200 OK):
+    ```json
     {
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy"
-    },
-    {
-      "front": "Where does photosynthesis occur in plant cells?",
-      "back": "In the chloroplasts"
+      "id": "string",
+      "deck_id": "string",
+      "front": "string",
+      "back": "string",
+      "source": "manual|ai-full|ai-edited",
+      "generation_id": "string|null",
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
     }
-  ]
-}
-```
+    ```
+  - **Business Logic**:
+    - If source='ai-full' and (front OR back) is edited → change source to 'ai-edited'
+    - If source='manual' or 'ai-edited' → source remains unchanged
+    - Verify deck_id exists and belongs to user if provided
+    - updated_at automatically updated by trigger
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors, deck doesn't exist)
+    - 401 Unauthorized
+    - 404 Not Found
 
-**Error Responses**:
-- `400 Bad Request`: Validation error (text too short/long, invalid model, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Deck does not exist
-- `429 Too Many Requests`: Rate limit exceeded (10 requests/hour)
-- `500 Internal Server Error`: AI generation failed
-- `503 Service Unavailable`: OpenRouter.ai API unavailable
+- **DELETE /api/v1/flashcards/:id**
+  - **Description**: Soft-delete a flashcard.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body**: 204 No Content
+  - **Business Logic**: Sets deleted_at to current timestamp
+  - **Error Codes**: 401 Unauthorized, 404 Not Found
 
-**Rate Limiting**: 10 requests per hour per user
-
-### 6.2 Accept Generated Flashcards
-
-**Method**: `POST`  
-**Path**: `/api/v1/generations/:id/accept`  
-**Description**: Accept and save suggested flashcards from a generation  
-**Headers**: `Authorization: Bearer <token>`
-
-**Request Body**:
-```json
-{
-  "flashcards": [
+- **PUT /api/v1/flashcards/:id/tags**
+  - **Description**: Replace all tags on a flashcard.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
     {
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy",
-      "edited": false
-    },
-    {
-      "front": "Where does photosynthesis happen?",
-      "back": "In chloroplasts of plant cells",
-      "edited": true
+      "tag_ids": ["string"]
     }
-  ]
-}
-```
-
-**Validation**:
-- `flashcards`: Required, array of flashcard objects
-- Each flashcard must have `front`, `back`, and `edited` boolean
-- `front`: 1-200 characters
-- `back`: 1-500 characters
-- Generation must belong to authenticated user
-
-**Business Logic**:
-1. Create flashcards with `source=ai-full` if `edited=false`, `source=ai-edited` if `edited=true`
-2. Link flashcards to generation via `generation_id`
-3. Update generation statistics: `accepted_unedited_count` and `accepted_edited_count`
-4. Create review records for each new flashcard
-
-**Success Response** (201 Created):
-```json
-{
-  "created_count": 2,
-  "flashcards": [
+    ```
+  - **Response Body** (200 OK):
+    ```json
     {
-      "id": 10,
-      "deck_id": 1,
-      "front": "What is photosynthesis?",
-      "back": "The process by which plants convert light energy into chemical energy",
-      "source": "ai-full",
-      "generation_id": 5,
-      "created_at": "2025-11-15T10:05:00Z"
-    },
-    {
-      "id": 11,
-      "deck_id": 1,
-      "front": "Where does photosynthesis happen?",
-      "back": "In chloroplasts of plant cells",
-      "source": "ai-edited",
-      "generation_id": 5,
-      "created_at": "2025-11-15T10:05:00Z"
+      "flashcard_id": "string",
+      "tags": [
+        {
+          "id": "string",
+          "name": "string",
+          "scope": "global|deck"
+        }
+      ]
     }
-  ]
-}
-```
+    ```
+  - **Business Logic** (Transaction):
+    1. Verify flashcard belongs to user
+    2. Verify all tag_ids exist and are accessible (global or user's deck tags)
+    3. Delete existing flashcard_tags entries
+    4. Insert new flashcard_tags entries
+  - **Error Codes**: 
+    - 400 Bad Request (invalid tag_ids)
+    - 401 Unauthorized
+    - 404 Not Found (flashcard or tag)
 
-**Error Responses**:
-- `400 Bad Request`: Validation error (flashcard content invalid, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Generation does not exist or does not belong to user
-
-### 6.3 Get Generation by ID
-
-**Method**: `GET`  
-**Path**: `/api/v1/generations/:id`  
-**Description**: Retrieve generation details and statistics  
-**Headers**: `Authorization: Bearer <token>`
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 5,
-  "user_id": "uuid",
-  "model": "openai/gpt-4",
-  "generated_count": 8,
-  "accepted_unedited_count": 1,
-  "accepted_edited_count": 1,
-  "source_text_hash": "abc123...",
-  "source_text_length": 2500,
-  "generation_duration": 3500,
-  "created_at": "2025-11-15T10:00:00Z",
-  "updated_at": "2025-11-15T10:05:00Z"
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Generation does not exist or does not belong to user
-
-### 6.4 List Generations
-
-**Method**: `GET`  
-**Path**: `/api/v1/generations`  
-**Description**: List all generations for authenticated user  
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `limit` (integer, optional, default: 50, max: 100): Number of generations to return
-- `offset` (integer, optional, default: 0): Pagination offset
-- `sort` (string, optional, default: "created_at"): Sort field
-- `order` (string, optional, default: "desc"): Sort order (`asc`, `desc`)
-
-**Success Response** (200 OK):
-```json
-{
-  "data": [
+- **POST /api/v1/flashcards/:id/tags**
+  - **Description**: Add tags to a flashcard (does not remove existing).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
     {
-      "id": 5,
-      "model": "openai/gpt-4",
-      "generated_count": 8,
-      "accepted_unedited_count": 1,
-      "accepted_edited_count": 1,
-      "source_text_length": 2500,
-      "generation_duration": 3500,
-      "created_at": "2025-11-15T10:00:00Z"
+      "tag_ids": ["string"]
     }
-  ],
-  "pagination": {
-    "total": 25,
-    "limit": 50,
-    "offset": 0,
-    "has_more": false
-  }
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-
-## 7. Review Endpoints (Spaced Repetition)
-
-### 7.1 Get Due Reviews
-
-**Method**: `GET`  
-**Path**: `/api/v1/reviews/due`  
-**Description**: Get flashcards due for review  
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `deck_id` (integer, optional): Filter by deck
-- `limit` (integer, optional, default: 20, max: 100): Number of reviews to return
-
-**Business Logic**:
-- Returns reviews where `due_at <= NOW()` and `deleted_at IS NULL`
-- Ordered by `due_at` ASC (oldest due first)
-- Includes flashcard details
-
-**Success Response** (200 OK):
-```json
-{
-  "data": [
+    ```
+  - **Response Body** (200 OK):
+    ```json
     {
-      "review_id": 1,
-      "flashcard": {
-        "id": 1,
-        "deck_id": 1,
-        "front": "What is the powerhouse of the cell?",
-        "back": "The mitochondria",
-        "tags": [
-          {
-            "id": 1,
-            "name": "biology"
-          }
-        ]
-      },
-      "due_at": "2025-11-15T08:00:00Z",
-      "interval": 7,
-      "ease_factor": 2.5,
-      "repetitions": 3
+      "flashcard_id": "string",
+      "tags": [
+        {
+          "id": "string",
+          "name": "string",
+          "scope": "global|deck"
+        }
+      ]
     }
-  ],
-  "total_due": 15
-}
-```
+    ```
 
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
+  - **Business Logic**:
+    - Inserts only new tag associations (ignores duplicates via ON CONFLICT)
+    - Returns all tags after addition
+  - **Error Codes**: 
+    - 400 Bad Request (invalid tag_ids)
+    - 401 Unauthorized
+    - 404 Not Found
 
-### 7.2 Submit Review
+- **DELETE /api/v1/flashcards/:id/tags/:tag_id**
+  - **Description**: Remove a specific tag from a flashcard.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body**: 204 No Content
+  - **Error Codes**: 401 Unauthorized, 404 Not Found
 
-**Method**: `POST`  
-**Path**: `/api/v1/reviews`  
-**Description**: Submit a review for a flashcard after study  
-**Headers**: `Authorization: Bearer <token>`
+### 3.4 Tags
 
-**Request Body**:
-```json
-{
-  "flashcard_id": 1,
-  "grade": 4,
-  "version": 0
-}
-```
-
-**Validation**:
-- `flashcard_id`: Required, must exist and belong to user
-- `grade`: Required, integer 0-5
-  - 0: Complete blackout
-  - 1: Incorrect, but familiar
-  - 2: Incorrect, but easy to recall
-  - 3: Correct with difficulty
-  - 4: Correct with hesitation
-  - 5: Perfect recall
-- `version`: Required for optimistic locking, must match current review version
-
-**Business Logic** (SuperMemo SM-2 Algorithm):
-1. Verify version matches for optimistic locking
-2. Calculate new interval based on grade:
-   - Grade < 3: Reset to day 1
-   - Grade >= 3: Multiply interval by ease_factor
-3. Adjust ease_factor:
-   - EF' = EF + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02))
-   - Minimum EF: 1.3
-4. Calculate next `due_at` = NOW() + interval
-5. Increment `repetitions` if grade >= 3, else reset to 0
-6. Update `last_review_at` = NOW()
-7. Increment `version`
-
-**Success Response** (200 OK):
-```json
-{
-  "id": 1,
-  "flashcard_id": 1,
-  "user_id": "uuid",
-  "due_at": "2025-11-22T10:00:00Z",
-  "interval": 14,
-  "ease_factor": 2.6,
-  "repetitions": 4,
-  "grade": 4,
-  "last_review_at": "2025-11-15T10:00:00Z",
-  "version": 1
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Validation error (invalid grade, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Flashcard does not exist
-- `409 Conflict`: Version mismatch (concurrent update detected)
-
-### 7.3 Get Review Statistics
-
-**Method**: `GET`  
-**Path**: `/api/v1/reviews/stats`  
-**Description**: Get user's review statistics  
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `deck_id` (integer, optional): Filter by deck
-
-**Success Response** (200 OK):
-```json
-{
-  "total_flashcards": 100,
-  "due_today": 15,
-  "due_this_week": 45,
-  "reviews_completed_today": 12,
-  "reviews_completed_this_week": 67,
-  "average_ease_factor": 2.4,
-  "retention_rate": 0.85
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-
-## 8. Tag Endpoints
-
-### 8.1 List Tags
-
-**Method**: `GET`  
-**Path**: `/api/v1/tags`  
-**Description**: List available tags (global + user's deck tags)  
-**Headers**: `Authorization: Bearer <token>`
-
-**Query Parameters**:
-- `scope` (string, optional): Filter by scope (`global`, `deck`)
-- `deck_id` (integer, optional): Filter by deck (for deck-scoped tags)
-- `search` (string, optional): Search tag names
-
-**Success Response** (200 OK):
-```json
-{
-  "data": [
+- **GET /api/v1/tags**
+  - **Description**: Retrieve list of available tags (global + user's deck tags).
+  - **Query Parameters**: 
+    - `scope` (global, deck) - filter by scope
+    - `deck_id` (string) - filter by deck (only for deck-scoped tags)
+    - `search` (string) - search by name (partial match)
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
     {
-      "id": 1,
-      "name": "biology",
-      "scope": "global",
-      "usage_count": 25
-    },
+      "data": [
+        {
+          "id": "string",
+          "name": "string",
+          "scope": "global|deck",
+          "deck_id": "string|null",
+          "usage_count": "integer",
+          "created_at": "ISO8601 timestamp"
+        }
+      ]
+    }
+    ```
+  - **Business Logic**:
+    - usage_count: COUNT of flashcard_tags entries (via LEFT JOIN)
+    - Returns global tags + user's deck-scoped tags (enforced by RLS)
+  - **Error Codes**: 401 Unauthorized
+
+- **POST /api/v1/tags**
+  - **Description**: Create a new deck-scoped tag.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
     {
-      "id": 5,
-      "name": "important",
+      "name": "string (1-50 chars, required)",
+      "deck_id": "string (required)"
+    }
+    ```
+  - **Response Body** (201 Created):
+    ```json
+    {
+      "id": "string",
+      "name": "string",
       "scope": "deck",
-      "deck_id": 1,
-      "user_id": "uuid",
-      "usage_count": 8
+      "deck_id": "string",
+      "created_at": "ISO8601 timestamp"
     }
-  ]
-}
-```
+    ```
+  - **Business Logic**:
+    - scope automatically set to "deck"
+    - user_id automatically set to auth.uid()
+    - Verify deck_id exists and belongs to user
+    - Name must be unique within deck (enforced by DB unique index)
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors, deck doesn't exist)
+    - 401 Unauthorized
+    - 409 Conflict (duplicate tag name in deck)
 
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
+- **PATCH /api/v1/tags/:id**
+  - **Description**: Update a deck-scoped tag name.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
+    {
+      "name": "string (1-50 chars, required)"
+    }
+    ```
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "id": "string",
+      "name": "string",
+      "scope": "deck",
+      "deck_id": "string",
+      "created_at": "ISO8601 timestamp"
+    }
+    ```
+  - **Business Logic**:
+    - Only deck-scoped tags can be updated (RLS enforces)
+    - Name must remain unique within deck
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors)
+    - 401 Unauthorized
+    - 404 Not Found (tag doesn't exist or is global)
+    - 409 Conflict (duplicate tag name)
 
-### 8.2 Create Tag
+- **DELETE /api/v1/tags/:id**
+  - **Description**: Delete a deck-scoped tag (cascades to flashcard_tags).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body**: 204 No Content
+  - **Business Logic**:
+    - Only deck-scoped tags can be deleted (RLS enforces)
+    - Cascade deletes all flashcard_tags entries
+  - **Error Codes**: 
+    - 401 Unauthorized
+    - 404 Not Found (tag doesn't exist or is global)
 
-**Method**: `POST`  
-**Path**: `/api/v1/tags`  
-**Description**: Create a new deck-scoped tag  
-**Headers**: `Authorization: Bearer <token>`
+### 3.5 Generations
 
-**Request Body**:
-```json
-{
-  "name": "important",
-  "deck_id": 1
-}
-```
+- **GET /api/v1/generations**
+  - **Description**: Retrieve user's generation history.
+  - **Query Parameters**: 
+    - `deck_id` (string) - filter by target deck
+    - `sort` (created_at) - default: created_at
+    - `order` (asc, desc) - default: desc
+    - `page` (integer, min 1) - default: 1
+    - `limit` (integer, min 1, max 100) - default: 20
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "data": [
+        {
+          "id": "string",
+          "deck_id": "string",
+          "model": "string",
+          "generated_count": "integer",
+          "accepted_unedited_count": "integer",
+          "accepted_edited_count": "integer",
+          "source_text_length": "integer",
+          "generation_duration_ms": "integer",
+          "created_at": "ISO8601 timestamp",
+          "updated_at": "ISO8601 timestamp"
+        }
+      ],
+      "pagination": {
+        "page": "integer",
+        "limit": "integer",
+        "total": "integer",
+        "total_pages": "integer"
+      }
+    }
+    ```
+  - **Error Codes**: 401 Unauthorized
 
-**Validation**:
-- `name`: Required, 1-50 characters, unique within deck
-- `deck_id`: Required, must exist and belong to user
+- **GET /api/v1/generations/:id**
+  - **Description**: Retrieve details of a specific generation (without suggestions).
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Response Body** (200 OK):
+    ```json
+    {
+      "id": "string",
+      "deck_id": "string",
+      "model": "string",
+      "generated_count": "integer",
+      "accepted_unedited_count": "integer",
+      "accepted_edited_count": "integer",
+      "source_text_length": "integer",
+      "generation_duration_ms": "integer",
+      "created_at": "ISO8601 timestamp",
+      "updated_at": "ISO8601 timestamp"
+    }
+    ```
+  - **Note**: Suggestions are NOT stored in database, only returned from /generate endpoint.
+  - **Error Codes**: 401 Unauthorized, 404 Not Found
 
-**Business Logic**:
-- Only deck-scoped tags can be created via API
-- Global tags require admin privileges (managed separately)
-- `scope` is automatically set to `deck`
+- **POST /api/v1/generations/generate**
+  - **Description**: Generate flashcards from source text using AI.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
+    {
+      "source_text": "string (1000-10000 chars, required)",
+      "model": "string (required, valid OpenRouter model ID)",
+      "deck_id": "string (required)"
+    }
+    ```
+  - **Response Body** (201 Created):
+    ```json
+    {
+      "generation_id": "string",
+      "model": "string",
+      "generated_count": "integer",
+      "source_text_length": "integer",
+      "generation_duration_ms": "integer",
+      "suggestions": [
+        {
+          "front": "string",
+          "back": "string"
+        }
+      ],
+      "created_at": "ISO8601 timestamp"
+    }
+    ```
+  - **Business Logic** (Transaction):
+    1. Validate source_text length (1000-10000)
+    2. Verify deck_id exists and belongs to user
+    3. Check rate limit (max 10 generations/hour per user)
+    4. Generate SHA-256 hash of source_text
+    5. Start timer
+    6. Call OpenRouter.ai API with structured prompt
+    7. Parse AI response into flashcard suggestions
+    8. Stop timer
+    9. Insert generation record (WITHOUT storing suggestions)
+    10. Return generation metadata + suggestions
+  - **Rate Limiting**: 10 requests per hour per user (429 if exceeded)
+  - **Error Handling**: 
+    - On AI failure: Log to generation_error_logs, return appropriate error
+    - Validate AI response format
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors, invalid model)
+    - 401 Unauthorized
+    - 429 Too Many Requests (rate limit)
+    - 502 Bad Gateway (OpenRouter.ai failure)
+    - 503 Service Unavailable (OpenRouter.ai timeout)
 
-**Success Response** (201 Created):
-```json
-{
-  "id": 5,
-  "name": "important",
-  "scope": "deck",
-  "deck_id": 1,
-  "user_id": "uuid",
-  "created_at": "2025-11-15T10:00:00Z"
-}
-```
+- **POST /api/v1/generations/:id/accept**
+  - **Description**: Accept generated flashcards, creating them in the database.
+  - **Request Headers**: `Authorization: Bearer {access_token}`
+  - **Request Body**:
+    ```json
+    {
+      "flashcards": [
+        {
+          "front": "string (1-200 chars, required)",
+          "back": "string (1-500 chars, required)",
+          "edited": "boolean (required)"
+        }
+      ]
+    }
+    ```
+  - **Response Body** (201 Created):
+    ```json
+    {
+      "accepted_count": "integer",
+      "flashcards": [
+        {
+          "id": "string",
+          "front": "string",
+          "back": "string",
+          "source": "ai-full|ai-edited",
+          "generation_id": "string",
+          "deck_id": "string",
+          "created_at": "ISO8601 timestamp"
+        }
+      ]
+    }
+    ```
+  - **Business Logic** (Transaction):
+    1. Verify generation exists and belongs to user
+    2. Get generation's deck_id
+    3. For each flashcard:
+       - Set source = "ai-full" if edited=false, "ai-edited" if edited=true
+       - Set generation_id to this generation
+       - Insert flashcard
+    4. Update generation statistics:
+       - accepted_unedited_count += count where edited=false
+       - accepted_edited_count += count where edited=true
+    5. Commit transaction
+  - **Validation**:
+    - Flashcards array must not be empty
+    - Each flashcard must have valid front/back lengths
+  - **Error Codes**: 
+    - 400 Bad Request (validation errors, empty array)
+    - 401 Unauthorized
+    - 404 Not Found (generation doesn't exist)
 
-**Error Responses**:
-- `400 Bad Request`: Validation error (name too long, empty name, etc.)
-- `401 Unauthorized`: Invalid or missing token
-- `404 Not Found`: Deck does not exist
-- `409 Conflict`: Tag name already exists in this deck
+## 4. Authentication and Authorization
 
-### 8.3 Update Tag
+### 4.1 Authentication Mechanism
 
-**Method**: `PATCH`  
-**Path**: `/api/v1/tags/:id`  
-**Description**: Update a deck-scoped tag  
-**Headers**: `Authorization: Bearer <token>`
+- **Provider**: Supabase Auth (JWT-based)
+- **Token Type**: Bearer tokens
+- **Header Format**: `Authorization: Bearer {access_token}`
+- **Token Expiry**: Configurable in Supabase (default: 1 hour)
+- **Refresh Tokens**: Supported via Supabase Auth refresh endpoint
 
-**Request Body**:
-```json
-{
-  "name": "very-important"
-}
-```
+### 4.2 Authorization Strategy
 
-**Validation**:
-- `name`: Required, 1-50 characters, unique within deck
-- Only deck-scoped tags belonging to user can be updated
+- **Row Level Security (RLS)**: Enforced at database level for all tables
+- **User Isolation**: All queries automatically filtered by `auth.uid() = user_id`
+- **Admin Role**: Identified by `raw_app_meta_data->>'role' = 'admin'` for global tag management
+- **Resource Ownership**: Always verified via RLS policies before any operation
 
-**Success Response** (200 OK):
-```json
-{
-  "id": 5,
-  "name": "very-important",
-  "scope": "deck",
-  "deck_id": 1,
-  "user_id": "uuid",
-  "created_at": "2025-11-15T10:00:00Z"
-}
-```
+### 4.3 Rate Limiting
 
-**Error Responses**:
-- `400 Bad Request`: Validation error
-- `401 Unauthorized`: Invalid or missing token
-- `403 Forbidden`: Cannot edit global tags (admin only)
-- `404 Not Found`: Tag does not exist or does not belong to user
-- `409 Conflict`: Tag name already exists in this deck
+- **Generation Endpoint**: 10 requests per hour per user
+- **Implementation**: Redis-backed counter or Supabase Edge Functions rate limiter
+- **Response**: 429 Too Many Requests with `Retry-After` header
 
-### 8.4 Delete Tag
+### 4.4 Security Measures
 
-**Method**: `DELETE`  
-**Path**: `/api/v1/tags/:id`  
-**Description**: Delete a deck-scoped tag  
-**Headers**: `Authorization: Bearer <token>`
+- **HTTPS**: Enforced for all API communication
+- **Input Sanitization**: All text inputs sanitized to prevent XSS/injection
+- **SQL Injection**: Prevented via parameterized queries (Supabase client)
+- **CORS**: Configured to allow only trusted origins
+- **Secrets Management**: API keys stored in environment variables, not committed
 
-**Business Logic**:
-- Removes tag and all associations with flashcards
-- Only deck-scoped tags belonging to user can be deleted
+## 5. Error Response Format
 
-**Success Response** (204 No Content)
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing token
-- `403 Forbidden`: Cannot delete global tags (admin only)
-- `404 Not Found`: Tag does not exist or does not belong to user
-
-## 9. Error Response Format
-
-All error responses follow a consistent format:
+All error responses follow a consistent structure:
 
 ```json
 {
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Front text must be between 1 and 200 characters",
-    "details": {
-      "field": "front",
-      "provided_length": 250,
-      "max_length": 200
-    }
+    "code": "string (error code)",
+    "message": "string (human-readable message)",
+    "details": "object|null (additional context, optional)"
   }
 }
 ```
 
 ### Common Error Codes
 
-- `AUTHENTICATION_REQUIRED`: Missing or invalid authentication token
-- `AUTHORIZATION_FAILED`: User lacks permission for the requested resource
-- `VALIDATION_ERROR`: Request body or parameters failed validation
-- `NOT_FOUND`: Requested resource does not exist
-- `CONFLICT`: Request conflicts with existing data (e.g., duplicate name)
-- `RATE_LIMIT_EXCEEDED`: Too many requests in time window
-- `GENERATION_FAILED`: AI generation service error
-- `SERVICE_UNAVAILABLE`: External service (OpenRouter.ai) unavailable
-- `INTERNAL_ERROR`: Unexpected server error
-- `VERSION_CONFLICT`: Optimistic locking version mismatch
+- **400 Bad Request**: Invalid input, validation failure
+- **401 Unauthorized**: Missing or invalid JWT token
+- **403 Forbidden**: Valid token but insufficient permissions
+- **404 Not Found**: Resource doesn't exist or doesn't belong to user
+- **409 Conflict**: Duplicate resource (e.g., deck name, tag name)
+- **429 Too Many Requests**: Rate limit exceeded
+- **500 Internal Server Error**: Unexpected server error
+- **502 Bad Gateway**: External service (OpenRouter.ai) failure
+- **503 Service Unavailable**: Service temporarily unavailable
 
-## 10. Authentication and Authorization
+## 6. Validation Rules
 
-### 10.1 Authentication Mechanism
+### Decks
 
-**Technology**: Supabase Auth with JWT tokens
+- `name`: 1-100 characters, unique per user, required
+- `description`: 0-5000 characters, optional
+- `is_default`: Cannot be set/changed manually (system managed)
+- `visibility`: Always "private" in MVP
 
-**Flow**:
-1. User registers or logs in via Supabase Auth endpoints
-2. Supabase returns JWT access token and refresh token
-3. Client includes access token in `Authorization: Bearer <token>` header for all API requests
-4. API validates token with Supabase and extracts user ID
-5. Token expires after 1 hour, client must refresh using refresh token
+### Flashcards
 
-### 10.2 Authorization
+- `front`: 1-200 characters, required
+- `back`: 1-500 characters, required
+- `deck_id`: Must exist and belong to user, required
+- `source`: Enum (manual, ai-full, ai-edited), automatically set
 
-**Row Level Security (RLS)**:
-- All database queries are automatically filtered by `user_id = auth.uid()`
-- RLS policies enforce that users can only access their own data
-- Implemented at database level via PostgreSQL RLS
+### Tags
 
-**Resource Ownership**:
-- Decks: User must be owner (`user_id` matches)
-- Flashcards: User must be owner (`user_id` matches)
-- Tags: User can access global tags and their own deck tags
-- Reviews: User can only access their own reviews
-- Generations: User can only access their own generations
+- `name`: 1-50 characters, unique per deck (for deck-scoped), required
+- `deck_id`: Must exist and belong to user (for deck-scoped), required
+- `scope`: Automatically set to "deck" for user-created tags
 
-**Future Considerations** (Post-MVP):
-- `deck_collaborators` table enables sharing decks with other users
-- Roles: `cooperator` (full CRUD) and `viewer` (read-only)
+### Generations
 
-## 11. Validation and Business Logic
+- `source_text`: 1000-10000 characters, required
+- `model`: Must be valid OpenRouter.ai model ID, required
+- `deck_id`: Must exist and belong to user, required
 
-### 11.1 Input Validation
+### Accepted Flashcards
 
-**Decks**:
-- `name`: Required, 1-100 characters, unique per user
-- `description`: Optional, max 5000 characters
-- `visibility`: Must be 'private' (only option in MVP)
-- `is_default`: Boolean flag indicating the "Uncategorized" deck (cannot be modified or deleted)
-- Reserved names: "Uncategorized" (can only be used for the default deck)
+- `front`: 1-200 characters, required
+- `back`: 1-500 characters, required
+- `edited`: Boolean, required
+- Array must not be empty
 
-**Flashcards**:
-- `front`: Required, 1-200 characters
-- `back`: Required, 1-500 characters
-- `source`: Automatically set based on creation method
-  - `manual`: Created by user via POST /api/v1/flashcards
-  - `ai-full`: Accepted from generation without edits
-  - `ai-edited`: Accepted from generation with edits
-- `deck_id`: Required, must exist and belong to user
+## 7. Business Logic Implementation
 
-**Tags**:
-- `name`: Required, 1-50 characters
-- Unique within scope:
-  - Global tags: Unique across all users
-  - Deck tags: Unique within deck
-- `scope`: Cannot be changed after creation
+### Default Deck Creation
 
-**Reviews**:
-- `grade`: Required, integer 0-5
-- `version`: Required for optimistic locking
+- **Trigger**: Database trigger on `auth.users` INSERT
+- **Function**: `create_default_deck_for_user()`
+- **Behavior**: Automatically creates "Uncategorized" deck with is_default=true
+- **Error Handling**: Graceful failure with warning log (doesn't block user creation)
 
-**Generations**:
-- `source_text`: Required, 1000-10000 characters
-- `model`: Required, valid OpenRouter.ai model identifier
+### Deck Deletion with Migration
 
-### 11.2 Business Logic
+- **Endpoint**: `DELETE /api/v1/decks/:id`
+- **Transaction Steps**:
+  1. Verify deck is not default
+  2. Count flashcards to migrate
+  3. Create migration tag `#deleted-from-{deck_name}`
+  4. Update flashcard deck_id to default deck
+  5. Assign migration tag to all migrated flashcards
+  6. Soft-delete deck (set deleted_at)
+- **Atomicity**: All steps in single transaction (rollback on any failure)
 
-**Default "Uncategorized" Deck**:
-- Created automatically during user registration
-- Marked with `is_default = true` flag
-- Cannot be deleted or renamed
-- Serves as destination for flashcards from deleted decks
-- Each user has exactly one default deck
+### AI Generation Flow
 
-**Deck Deletion with Flashcard Migration**:
-- When deleting a deck containing flashcards:
-  1. Verify deck is not the default "Uncategorized" deck (`is_default = false`)
-  2. Get user's "Uncategorized" deck ID
-  3. Start database transaction
-  4. For each flashcard in the deleted deck:
-     - Update `flashcards.deck_id` to "Uncategorized" deck ID
-     - Create tag `#deleted-from-<deck_name>` if it doesn't exist (deck-scoped, belongs to Uncategorized deck)
-     - Insert record into `flashcard_tags` linking flashcard to the new tag
-  5. Soft-delete the deck (set `deleted_at` timestamp)
-  6. Commit transaction
-- The default "Uncategorized" deck cannot be deleted
-- This ensures no flashcards are lost when deleting decks
-- All operations are atomic (transaction ensures all-or-nothing execution)
+- **Generate** (`POST /generate`):
+  1. Validate input
+  2. Check rate limit
+  3. Call OpenRouter.ai
+  4. Parse response
+  5. Store generation metadata (NOT suggestions)
+  6. Return suggestions to client
+- **Accept** (`POST /:id/accept`):
+  1. Verify generation ownership
+  2. Create flashcards with proper source attribution
+  3. Update generation statistics
+  4. Return created flashcards
 
-**Soft Delete**:
-- Decks, flashcards, and reviews use soft delete (`deleted_at` timestamp)
-- Soft-deleted records are filtered from all queries by default
-- Enables data recovery and audit trails
+### Source Tracking
 
-**Cascading Deletes**:
-- Deleting a user hard-deletes all owned decks, flashcards, reviews, generations (including "Uncategorized" deck)
-- Deleting a deck triggers flashcard migration to "Uncategorized" before soft-deletion
-- Deleting a flashcard soft-deletes associated reviews
+- **Manual Creation**: source = "manual"
+- **AI Unedited**: source = "ai-full" (accepted without changes)
+- **AI Edited**: source = "ai-edited" (accepted with changes OR ai-full edited later)
+- **Transition**: ai-full → ai-edited on first edit (irreversible)
 
-**Flashcard Source Tracking**:
-- When AI-generated flashcard (`source=ai-full`) is edited, `source` changes to `ai-edited`
-- Tracked in generation statistics: `accepted_unedited_count` vs `accepted_edited_count`
+### Full-Text Search
 
-**Spaced Repetition Algorithm**:
-- Uses SuperMemo SM-2 algorithm
-- Key parameters:
-  - `interval`: Days until next review
-  - `ease_factor`: Multiplier for interval calculation (default 2.5, min 1.3)
-  - `repetitions`: Consecutive correct reviews
-- Grade < 3 resets progress (interval = 1, repetitions = 0)
-- Grade >= 3 increases interval and adjusts ease_factor
+- **Implementation**: PostgreSQL `tsv` column with GIN index
+- **Configuration**: 'simple' dictionary (language-agnostic)
+- **Query**: `WHERE tsv @@ to_tsquery('simple', search_term)`
+- **Fallback**: pg_trgm for fuzzy/typo-tolerant search (optional)
 
-**Review Scheduling**:
-- New flashcards have `due_at = NOW()` (immediately due)
-- After each review, `due_at` is recalculated based on interval
+## 8. Pagination
 
-**Tag Management**:
-- Global tags are read-only for users (admin-managed)
-- Users can create, edit, delete deck-scoped tags
-- Tags can be shared across flashcards within a deck
-- System automatically creates `#deleted-from-<deck_name>` tags when decks are deleted
-- These tags are deck-scoped to the "Uncategorized" deck
+### Standard Pagination
 
-### 11.3 Deck Deletion Algorithm (Detailed Implementation)
-
-The deck deletion endpoint implements a complex algorithm to safely migrate flashcards and maintain data integrity. Here's the detailed step-by-step process:
-
-**Step 1: Validation**
-```
-1. Verify user is authenticated (JWT token valid)
-2. Verify deck exists in database
-3. Verify deck belongs to authenticated user (via RLS)
-4. Check if deck.is_default = true
-   - If true: Return 403 Forbidden "Cannot delete default Uncategorized deck"
-   - If false: Continue
-```
-
-**Step 2: Get Default Deck**
-```
-5. Query for user's default deck:
-   SELECT id, name FROM decks 
-   WHERE user_id = <user_id> AND is_default = true AND deleted_at IS NULL
-   
-6. If no default deck found: Return 500 Internal Server Error
-   (This should never happen if registration logic is correct)
-```
-
-**Step 3: Count Flashcards**
-```
-7. Count flashcards in the deck to be deleted:
-   SELECT COUNT(*) FROM flashcards 
-   WHERE deck_id = <deck_to_delete_id> AND deleted_at IS NULL
-   
-8. Store count for response
-```
-
-**Step 4: Begin Transaction**
-```
-9. BEGIN TRANSACTION (ensures atomicity)
-```
-
-**Step 5: Create Migration Tag**
-```
-10. Generate tag name: tag_name = "#deleted-from-" + deck.name
-    Example: "#deleted-from-Biology 101"
-    
-11. Check if tag already exists:
-    SELECT id FROM tags 
-    WHERE name = <tag_name> AND scope = 'deck' AND deck_id = <default_deck_id>
-    
-12. If tag doesn't exist, create it:
-    INSERT INTO tags (name, scope, deck_id, user_id)
-    VALUES (<tag_name>, 'deck', <default_deck_id>, <user_id>)
-    RETURNING id
-    
-13. Store tag_id for next steps
-```
-
-**Step 6: Migrate Flashcards**
-```
-14. Get all flashcard IDs from the deck to be deleted:
-    SELECT id FROM flashcards 
-    WHERE deck_id = <deck_to_delete_id> AND deleted_at IS NULL
-    
-15. For each flashcard_id:
-    a. Update flashcard's deck:
-       UPDATE flashcards 
-       SET deck_id = <default_deck_id>, updated_at = NOW()
-       WHERE id = <flashcard_id>
-       
-    b. Check if flashcard already has this tag:
-       SELECT 1 FROM flashcard_tags 
-       WHERE flashcard_id = <flashcard_id> AND tag_id = <tag_id>
-       
-    c. If tag not already associated, add it:
-       INSERT INTO flashcard_tags (flashcard_id, tag_id)
-       VALUES (<flashcard_id>, <tag_id>)
-       ON CONFLICT DO NOTHING
-```
-
-**Step 7: Soft-Delete Deck**
-```
-16. Soft-delete the deck:
-    UPDATE decks 
-    SET deleted_at = NOW(), updated_at = NOW()
-    WHERE id = <deck_to_delete_id>
-```
-
-**Step 8: Commit Transaction**
-```
-17. COMMIT TRANSACTION
-```
-
-**Step 9: Return Success Response**
-```
-18. Return 200 OK with details:
-    {
-      "deck_deleted": true,
-      "deck_name": <original_deck_name>,
-      "flashcards_moved": <count_from_step_7>,
-      "destination_deck_id": <default_deck_id>,
-      "destination_deck_name": "Uncategorized",
-      "tag_created": <tag_name>,
-      "tag_id": <tag_id>
+- **Query Parameters**: `page` (default: 1), `limit` (default: 20, max: 100)
+- **Response Format**:
+  ```json
+  {
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "total_pages": 8
     }
-```
-
-**Error Handling:**
-- If any step fails during transaction (steps 10-16):
-  - ROLLBACK TRANSACTION
-  - Return 500 Internal Server Error with details
-  - No changes are persisted to database
-  
-- If database connection fails:
-  - Return 503 Service Unavailable
-  
-**Performance Considerations:**
-- For decks with many flashcards (>1000), consider batch updates
-- Use database connection pooling
-- Consider adding progress tracking for large migrations (future enhancement)
-
-**Edge Cases:**
-- Empty deck (0 flashcards): Still create tag and soft-delete deck
-- Deck name with special characters: Tag name must escape/sanitize
-- Concurrent deletion attempts: Database locks prevent race conditions
-- Tag already exists from previous deck deletion: Reuse existing tag
-
-### 11.5 Rate Limiting
-
-**AI Generation**: 10 requests per hour per user
-- Prevents cost abuse
-- Returns `429 Too Many Requests` when exceeded
-- Rate limit reset time included in response header: `X-RateLimit-Reset: 1731667200`
-
-**Other Endpoints**: No explicit rate limiting in MVP
-- Future consideration: 100 requests per minute per user for general API
-
-### 11.6 Concurrency Control
-
-**Optimistic Locking** (Reviews):
-- `version` field incremented on each update
-- Client must provide current version when submitting review
-- If version mismatch, returns `409 Conflict`
-- Prevents race conditions when multiple devices review same flashcard
-
-### 11.7 Data Integrity
-
-**Foreign Key Constraints**:
-- All relationships enforced at database level
-- Invalid references rejected with `404 Not Found`
-
-**Check Constraints**:
-- `source` must be 'ai-full', 'ai-edited', or 'manual'
-- `visibility` must be 'private'
-- `grade` must be 0-5
-- `source_text_length` must be 1000-10000
-
-**Unique Constraints**:
-- Deck names unique per user
-- Global tag names globally unique
-- Deck tag names unique within deck
-
-## 12. Performance Considerations
-
-### 12.1 Pagination
-
-All list endpoints support pagination:
-- `limit`: Number of results (default 50, max 100)
-- `offset`: Skip first N results
-- Response includes `pagination` object with `total`, `limit`, `offset`, `has_more`
-
-### 12.2 Indexing
-
-Database indices optimize common queries:
-- `idx_flashcards_user_id`: Fast filtering by user
-- `idx_flashcards_deck_id`: Fast filtering by deck
-- `idx_flashcards_tsv`: Full-text search
-- `idx_reviews_user_due`: Fast lookup of due reviews
-- Foreign key indices on all relationships
-
-### 12.3 Caching Strategy
-
-**Future Consideration** (Post-MVP):
-- Cache user's deck list (invalidate on create/update/delete)
-- Cache tag list (invalidate on create/update/delete)
-- Cache generation statistics
-- Use Redis or similar for session storage
-
-### 12.4 Search Optimization
-
-**Full-Text Search**:
-- Uses PostgreSQL `tsvector` and GIN index on flashcards
-- Enables fast search across front and back text
-- Search query: `?search=mitochondria`
-
-**Trigram Search**:
-- PostgreSQL `pg_trgm` extension for fuzzy matching
-- Enables LIKE queries with good performance
-- Useful for autocomplete on tags
-
-## 13. Future Enhancements (Post-MVP)
-
-### 13.1 Deck Sharing
-- Implement `deck_collaborators` functionality
-- Add endpoints: POST /api/v1/decks/:id/collaborators
-- Support roles: `cooperator`, `viewer`
-- Update RLS policies for shared access
-
-### 13.2 Public Decks
-- Add `visibility` values: `public`, `shared`
-- Endpoint: GET /api/v1/decks/public for browsing
-- Clone functionality: POST /api/v1/decks/:id/clone
-
-### 13.3 Advanced Search
-- Search by multiple tags (AND/OR logic)
-- Date range filtering
-- Search within specific decks
-- Save search queries
-
-### 13.4 Import/Export
-- POST /api/v1/decks/:id/import (CSV, Anki format)
-- GET /api/v1/decks/:id/export?format=csv
-
-### 13.5 Notifications
-- Webhook or push notifications for due reviews
-- Email reminders
-
-### 13.6 Analytics
-- Detailed learning analytics dashboard
-- Progress tracking over time
-- Endpoint: GET /api/v1/analytics
-
-### 13.7 Bulk Operations
-- POST /api/v1/flashcards/bulk (create multiple)
-- PATCH /api/v1/flashcards/bulk (update multiple)
-- DELETE /api/v1/flashcards/bulk (delete multiple)
-
-## 14. API Versioning
-
-**Current Version**: v1
-
-**Versioning Strategy**:
-- Version included in URL path: `/api/v1/`
-- Breaking changes require new version: `/api/v2/`
-- Non-breaking changes (new fields, new endpoints) added to current version
-- Previous versions supported for 6 months after new version release
-
-**Breaking Changes**:
-- Removing fields from responses
-- Changing field types
-- Removing endpoints
-- Changing URL structure
-- Changing authentication mechanism
-
-**Non-Breaking Changes**:
-- Adding new optional fields to requests
-- Adding new fields to responses
-- Adding new endpoints
-- Adding new query parameters
-
-## 15. Security Considerations
-
-### 15.1 Input Sanitization
-- All text inputs sanitized to prevent XSS
-- SQL injection prevented by Supabase parameterized queries
-- File upload not supported in MVP (no risk)
-
-### 15.2 Data Privacy (GDPR Compliance)
-- User can delete account: DELETE /api/v1/users/me
-- Hard delete removes all personal data
-- User can export data (future enhancement)
-- Minimal data collection (email, flashcards only)
-
-### 15.3 HTTPS Only
-- All API communication over HTTPS
-- Tokens never transmitted in URLs (headers only)
-
-### 15.4 CORS
-- Configure allowed origins in production
-- Restrict to application domain
-
-### 15.5 Secrets Management
-- API keys (OpenRouter.ai) stored in environment variables
-- Never exposed in responses or logs
-- Rotate keys periodically
-
-## 16. Monitoring and Logging
-
-### 16.1 Logging (Future Consideration)
-- Log all API requests (method, path, status, duration)
-- Log authentication failures
-- Log AI generation errors to `generation_error_logs` table
-- Exclude sensitive data (passwords, tokens)
-
-### 16.2 Metrics
-- Request count by endpoint
-- Response time percentiles (p50, p95, p99)
-- Error rate by endpoint
-- AI generation success rate
-- Daily active users
-- Flashcards created per user
-
-### 16.3 Alerting
-- Alert on high error rate (>5%)
-- Alert on slow response times (p95 > 1s)
-- Alert on AI generation failures (>10% failure rate)
-- Alert on rate limit violations
-
-## 17. Testing Strategy
-
-### 17.1 Unit Tests
-- Validation logic
-- Spaced repetition algorithm calculations
-- Business logic functions
-
-### 17.2 Integration Tests
-- All API endpoints
-- Authentication and authorization
-- Database queries and RLS policies
-- Error handling
-
-### 17.3 End-to-End Tests
-- Complete user flows:
-  - Register → Create deck → Generate flashcards → Accept → Review
-  - Register → Create deck → Manual flashcard → Review
-  - Edit flashcard → Delete flashcard
-  - Add tags → Filter by tags
-
-### 17.4 Load Tests
-- AI generation endpoint (cost-sensitive)
-- Review submission (high frequency)
-- Flashcard listing (large datasets)
-
-## 18. API Client SDKs
-
-### 18.1 JavaScript/TypeScript (Frontend)
-- Supabase JS SDK for auth and database operations
-- Custom API client wrapper for business logic endpoints
-- Type definitions generated from OpenAPI spec
-
-### 18.2 Future Considerations
-- Python SDK for data analysis
-- Mobile SDKs (iOS, Android) if mobile apps developed
-
-## 19. Documentation
-
-### 19.1 API Documentation
-- OpenAPI 3.0 specification
-- Interactive documentation (Swagger UI or similar)
-- Code examples for each endpoint
-- Authentication guide
-
-### 19.2 Developer Resources
-- Getting started guide
-- Authentication tutorial
-- Spaced repetition algorithm explanation
-- Rate limiting guide
-- Error handling best practices
-
-## 20. Appendix: Database Schema Reference
-
-### Key Tables
-- `decks`: User's flashcard collections (including special "Uncategorized" deck with `is_default = true`)
-- `flashcards`: Individual flashcards with front/back content
-- `tags`: Global and deck-scoped tags (including system-generated `#deleted-from-*` tags)
-- `flashcard_tags`: Many-to-many junction table
-- `reviews`: Spaced repetition state and history
-- `generations`: AI generation metadata
-- `generation_error_logs`: AI error tracking
-
-### Database Schema Changes Required
-
-**1. Add `is_default` column to `decks` table:**
-```sql
-ALTER TABLE public.decks 
-ADD COLUMN is_default BOOLEAN NOT NULL DEFAULT false;
-```
-
-**2. Add unique constraint for default deck per user:**
-```sql
-CREATE UNIQUE INDEX idx_decks_user_default 
-ON public.decks(user_id) 
-WHERE is_default = true;
-```
-
-**3. Create function to automatically create "Uncategorized" deck on user registration:**
-```sql
-CREATE OR REPLACE FUNCTION create_default_deck_for_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.decks (user_id, name, description, visibility, is_default)
-  VALUES (
-    NEW.id, 
-    'Uncategorized', 
-    'Default deck for uncategorized flashcards', 
-    'private', 
-    true
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION create_default_deck_for_user();
-```
-
-**4. Keep ON DELETE RESTRICT on `flashcards.deck_id`:**
-- The constraint remains RESTRICT (as in original schema)
-- Deck deletion logic is handled at application level (API endpoint)
-- This prevents accidental data loss from direct database operations
-
-**5. Add check constraint to prevent renaming default deck:**
-```sql
-ALTER TABLE public.decks
-ADD CONSTRAINT check_default_deck_name 
-CHECK (
-  (is_default = true AND name = 'Uncategorized') OR 
-  (is_default = false)
-);
-```
-
-### Key Relationships
-- User → Decks (1:N)
-- Deck → Flashcards (1:N)
-- Flashcard ↔ Tags (N:M via flashcard_tags)
-- Flashcard → Reviews (1:N)
-- Generation → Flashcards (1:N, optional)
-
-### Soft Delete Pattern
-- Tables with `deleted_at` column: decks, flashcards, reviews
-- Filtered from queries with `WHERE deleted_at IS NULL`
-- Enables data recovery and compliance with audit requirements
-
-### Default Deck Pattern
-- Each user has one "Uncategorized" deck with `is_default = true`
-- Created automatically on user registration
-- Cannot be deleted or renamed
-- Serves as safety net for flashcards from deleted decks
-- Flashcards are moved here with tracking tags when their deck is deleted
+  }
+  ```
+- **SQL Implementation**: `LIMIT {limit} OFFSET {(page-1)*limit}`
+
+## 9. Versioning Strategy
+
+- **Current Version**: v1
+- **URL Pattern**: `/api/v1/{resource}`
+- **Breaking Changes**: Require new version (v2, v3, etc.)
+- **Non-Breaking Changes**: Applied to current version
+- **Deprecation**: Minimum 6-month notice before version removal
+
+## 10. Future Enhancements (Post-MVP)
+
+### Out of Scope for MVP
+
+- Spaced repetition algorithm (reviews table)
+- Deck sharing and collaboration (deck_collaborators)
+- Public/shared deck visibility
+- Bulk operations (bulk create/update/delete)
+- Import/export (CSV, Anki)
+- Advanced search (multiple tags, date ranges)
+- Saved search queries
+- Notifications and reminders
+- Analytics dashboard
+- Images/audio in flashcards
+- Mobile native apps
+- Offline mode
+
+### API Extensibility
+
+The current API design supports future enhancements without breaking changes:
+- `visibility` field ready for 'public', 'shared' values
+- Deck collaboration can be added via new endpoints
+- Spaced repetition can use existing flashcard structure
+- Bulk operations can be added as separate endpoints
 
 ---
 
-## Summary of Changes
-
-**Version 1.1 Updates:**
-1. **Default "Uncategorized" Deck System:**
-   - Automatically created during user registration
-   - Cannot be deleted or renamed
-   - Receives flashcards from deleted decks
-
-2. **Enhanced Deck Deletion:**
-   - Flashcards are migrated to "Uncategorized" instead of blocking deletion
-   - Automatic tagging with `#deleted-from-<deck_name>` for traceability
-   - Transaction-based implementation ensures atomicity
-
-3. **New Endpoints:**
-   - `GET /api/v1/decks/default` - Retrieve user's default deck
-
-4. **Database Schema Updates:**
-   - Added `is_default` column to `decks` table
-   - Created trigger for automatic default deck creation
-   - Added constraints to protect default deck integrity
-
-5. **Enhanced Validation:**
-   - Reserved "Uncategorized" name for default deck only
-   - Protection against modifying or deleting default deck
-
-**Document Version**: 1.1  
-**Last Updated**: 2025-11-15  
-**Author**: 10x-cards API Architecture Team
-
+**Document Version**: 1.2  
+**Last Updated**: 2025-11-16  
+**Compatible With**: Database Schema v2.0, PRD v1.1

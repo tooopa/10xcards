@@ -143,25 +143,6 @@ CREATE TABLE public.generation_error_logs (
 - Przechowuje informacje o nieudanych generacjach
 - Pomaga w monitoringu i debugowaniu problemów z AI
 
-### 1.7 deck_collaborators
-Tabela dla przyszłego współdzielenia talii (pusta w MVP).
-
-```sql
-CREATE TABLE public.deck_collaborators (
-    deck_id BIGINT NOT NULL REFERENCES public.decks(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('cooperator', 'viewer')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (deck_id, user_id)
-);
-```
-
-**Uwagi:**
-- `cooperator`: pełne uprawnienia CRUD jak właściciel
-- `viewer`: tylko uprawnienia do odczytu
-- Funkcjonalność poza zakresem MVP
-
 ## 2. Relacje między tabelami
 
 ### Diagram relacji:
@@ -219,11 +200,6 @@ decks *←→* auth.users (przez deck_collaborators, przyszłość)
 9. **generations → flashcards**: 1-to-Many (opcjonalnie)
    - Generacja może być źródłem wielu fiszek
    - `flashcards.generation_id` → `generations.id` (ON DELETE SET NULL)
-
-10. **decks ←→ auth.users**: Many-to-Many (przez `deck_collaborators`)
-    - Talia może być współdzielona z wieloma użytkownikami (przyszłość)
-    - `deck_collaborators.deck_id` → `decks.id` (ON DELETE CASCADE)
-    - `deck_collaborators.user_id` → `auth.users.id` (ON DELETE CASCADE)
 
 11. **auth.users → generation_error_logs**: 1-to-Many
     - Użytkownik ma logi błędów generacji
@@ -314,17 +290,6 @@ CREATE INDEX idx_generation_error_logs_error_code ON public.generation_error_log
 -- Composite index dla analizy błędów
 CREATE INDEX idx_generation_error_logs_user_code ON public.generation_error_logs(user_id, error_code, created_at DESC);
 ```
-
-### deck_collaborators
-```sql
-CREATE INDEX idx_deck_collaborators_user_id ON public.deck_collaborators(user_id);
-CREATE INDEX idx_deck_collaborators_deck_id ON public.deck_collaborators(deck_id);
-CREATE INDEX idx_deck_collaborators_role ON public.deck_collaborators(role);
-
--- Composite index dla uprawnień
-CREATE INDEX idx_deck_collaborators_deck_role ON public.deck_collaborators(deck_id, role);
-```
-
 ## 4. Funkcje pomocnicze
 
 ### 4.1 Funkcja do automatycznego tworzenia domyślnej talii
@@ -387,11 +352,6 @@ CREATE TRIGGER update_decks_updated_at
 
 CREATE TRIGGER update_generations_updated_at
     BEFORE UPDATE ON public.generations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_deck_collaborators_updated_at
-    BEFORE UPDATE ON public.deck_collaborators
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 ```
@@ -643,68 +603,6 @@ CREATE POLICY "Admins can view all error logs"
     );
 ```
 
-### 5.7 deck_collaborators
-
-```sql
-ALTER TABLE public.deck_collaborators ENABLE ROW LEVEL SECURITY;
-
--- Użytkownik widzi talie, do których ma dostęp jako współpracownik
-CREATE POLICY "Users can view their collaborations"
-    ON public.deck_collaborators FOR SELECT
-    TO authenticated
-    USING (
-        auth.uid() = user_id OR
-        EXISTS (
-            SELECT 1 FROM public.decks 
-            WHERE decks.id = deck_collaborators.deck_id 
-            AND decks.user_id = auth.uid()
-        )
-    );
-
--- Właściciel talii może dodawać współpracowników
-CREATE POLICY "Deck owners can add collaborators"
-    ON public.deck_collaborators FOR INSERT
-    TO authenticated
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.decks 
-            WHERE decks.id = deck_collaborators.deck_id 
-            AND decks.user_id = auth.uid()
-        )
-    );
-
--- Właściciel talii może aktualizować współpracowników
-CREATE POLICY "Deck owners can update collaborators"
-    ON public.deck_collaborators FOR UPDATE
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.decks 
-            WHERE decks.id = deck_collaborators.deck_id 
-            AND decks.user_id = auth.uid()
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.decks 
-            WHERE decks.id = deck_collaborators.deck_id 
-            AND decks.user_id = auth.uid()
-        )
-    );
-
--- Właściciel talii może usuwać współpracowników
-CREATE POLICY "Deck owners can remove collaborators"
-    ON public.deck_collaborators FOR DELETE
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.decks 
-            WHERE decks.id = deck_collaborators.deck_id 
-            AND decks.user_id = auth.uid()
-        )
-    );
-```
-
 ## 6. Dodatkowe uwagi i wyjaśnienia
 
 ### 6.1 Strategia soft-delete
@@ -770,7 +668,6 @@ Proces usuwania talii (implementowany w aplikacji):
 ### 6.9 Rozszerzalność
 
 - `visibility` w decks przygotowane na 'public', 'shared'
-- `deck_collaborators` gotowe na przyszłe współdzielenie
 - Struktura obsługuje przyszłe funkcjonalności bez breaking changes
 
 ### 6.10 Normalizacja

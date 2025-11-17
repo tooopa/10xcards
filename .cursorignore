@@ -1,0 +1,15 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+#.ai/auth-env-setup.md
+.ai/authentication-implementation-plan.md
+#.ai/authentication-implementation-summary.md
+.ai/authentication-testing-report.md
+.ai/authentication-testing-summary-table.md
+.ai/decks-implementation-plan.md
+#.ai/decks-implementation-summary.md
+.ai/flashcards-implementation-plan.md
+#.ai/flashcards-implementation-summary.md
+.ai/flashcards-integration-tests.md
+#.ai/flashcards-testing-summary.md
+.ai/generations-implementation-plan.md
+#.ai/generations-implementation-summary.md
+.ai/tags-implementation-plan.md

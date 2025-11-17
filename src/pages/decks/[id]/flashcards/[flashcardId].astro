@@ -1,0 +1,15 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import FlashcardDetail from "../../../../components/FlashcardDetail.tsx";
+
+export async function getStaticPaths() {
+  // For now, we'll use dynamic rendering
+  return [];
+}
+
+const { id: deckId, flashcardId } = Astro.params;
+---
+
+<Layout title={`Flashcard - 10xCards`}>
+  <FlashcardDetail deckId={deckId} flashcardId={flashcardId} client:load />
+</Layout>
