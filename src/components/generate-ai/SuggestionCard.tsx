@@ -34,9 +34,9 @@ export function SuggestionCard({ suggestion, onChange, onDelete }: SuggestionCar
   };
 
   const getQualityColor = (score: number): string => {
-    if (score >= 0.8) return "text-green-600 bg-green-100";
-    if (score >= 0.6) return "text-yellow-600 bg-yellow-100";
-    return "text-red-600 bg-red-100";
+    if (score >= 0.8) return "text-[color:var(--color-success-strong)] bg-[color:var(--color-success-soft)]";
+    if (score >= 0.6) return "text-[color:var(--color-warning-strong)] bg-[color:var(--color-warning-soft)]";
+    return "text-[color:var(--color-destructive-strong)] bg-[color:var(--color-destructive-soft)]";
   };
 
   return (

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AppProvider } from "@/contexts/AppContext";
-import { Navigation } from "@/components/Navigation";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
 
 interface AppLayoutProps {
@@ -11,7 +11,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <AppProvider>
       <div className="flex min-h-screen flex-col bg-background">
-        <Navigation />
+        <AppHeader />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only fixed top-2 left-2 z-50 rounded bg-primary text-primary-foreground px-4 py-2"

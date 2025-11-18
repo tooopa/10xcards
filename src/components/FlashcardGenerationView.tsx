@@ -6,6 +6,8 @@ import { FlashcardList } from "./FlashcardList";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { BulkSaveButton } from "./BulkSaveButton";
 import { ErrorNotification } from "./ErrorNotification";
+import { FormField } from "@/components/ui/form-field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type FlashcardProposalViewModel = GenerationSuggestionDto & {
   accepted: boolean;
@@ -122,24 +124,24 @@ export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps
       {errorMessage && <ErrorNotification message={errorMessage} />}
 
       {/* Deck Selector */}
-      <div className="space-y-2">
-        <label htmlFor="deck-select" className="text-sm font-medium text-foreground">
-          Select Deck for Generated Flashcards
-        </label>
-        <select
-          id="deck-select"
+      <FormField label="Docelowa talia" description="Wygenerowane fiszki zostaną zapisane w wybranym zbiorze." required>
+        <Select
           value={selectedDeckId}
-          onChange={(e) => setSelectedDeckId(e.target.value)}
-          className="w-full px-3 py-2 border border-input bg-background rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          disabled={isLoading}
+          onValueChange={setSelectedDeckId}
+          disabled={isLoading || availableDecks.length === 0}
         >
-          {availableDecks.map((deck) => (
-            <option key={deck.id} value={deck.id}>
-              {deck.name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <SelectTrigger fullWidth aria-label="Wybierz talię docelową">
+            <SelectValue placeholder="Wybierz talię" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableDecks.map((deck) => (
+              <SelectItem key={deck.id} value={deck.id}>
+                {deck.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FormField>
 
       <TextInputArea value={textValue} onChange={handleTextChange} disabled={isLoading} />
 

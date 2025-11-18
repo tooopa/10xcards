@@ -39,6 +39,24 @@
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
+
+  /* Derived status tokens */
+  --success-foreground: color-mix(in oklch, var(--success) 20%, white);
+  --success-strong: color-mix(in oklch, var(--success) 80%, black);
+  --success-soft: color-mix(in oklch, var(--success) 12%, white);
+  --success-border: color-mix(in oklch, var(--success) 35%, white);
+  --warning-foreground: color-mix(in oklch, var(--warning) 30%, black);
+  --warning-strong: color-mix(in oklch, var(--warning) 70%, black);
+  --warning-soft: color-mix(in oklch, var(--warning) 15%, white);
+  --warning-border: color-mix(in oklch, var(--warning) 40%, white);
+  --info-foreground: color-mix(in oklch, var(--info) 25%, white);
+  --info-strong: color-mix(in oklch, var(--info) 75%, black);
+  --info-soft: color-mix(in oklch, var(--info) 18%, white);
+  --info-border: color-mix(in oklch, var(--info) 45%, white);
+  --destructive-foreground: color-mix(in oklch, var(--destructive) 15%, white);
+  --destructive-strong: color-mix(in oklch, var(--destructive) 80%, black);
+  --destructive-soft: color-mix(in oklch, var(--destructive) 14%, white);
+  --destructive-border: color-mix(in oklch, var(--destructive) 35%, white);
 }
 
 .dark {
@@ -84,26 +102,26 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   /* Typography scale */
-  --font-size-xs: 0.75rem;    /* 12px */
-  --font-size-sm: 0.875rem;   /* 14px */
-  --font-size-base: 1rem;     /* 16px */
-  --font-size-lg: 1.125rem;   /* 18px */
-  --font-size-xl: 1.25rem;    /* 20px */
-  --font-size-2xl: 1.5rem;    /* 24px */
-  --font-size-3xl: 1.875rem;  /* 30px */
-  --font-size-4xl: 2.25rem;   /* 36px */
-  --font-size-5xl: 3rem;      /* 48px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem; /* 36px */
+  --font-size-5xl: 3rem; /* 48px */
   /* Spacing scale */
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.25rem;   /* 20px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  --space-16: 4rem;     /* 64px */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -119,9 +137,10 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-strong: var(--info-strong);
+  --color-info-soft: var(--info-soft);
+  --color-info-border: var(--info-border);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -138,6 +157,28 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-border: var(--destructive-border);
+
+  --space-2-5: 0.625rem;
+  --space-7: 1.75rem;
+  --space-9: 2.25rem;
+  --space-14: 3.5rem;
+  --space-18: 4.5rem;
 }
 
 @layer base {
@@ -146,5 +187,87 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  .heading-xl {
+    font-size: var(--font-size-4xl);
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    font-weight: 700;
+  }
+
+  .heading-lg {
+    font-size: var(--font-size-3xl);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  .heading-md {
+    font-size: var(--font-size-2xl);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  .heading-sm {
+    font-size: var(--font-size-xl);
+    line-height: 1.35;
+    font-weight: 600;
+  }
+
+  .body-lg {
+    font-size: var(--font-size-lg);
+    line-height: 1.55;
+    font-weight: 500;
+  }
+
+  .body-base {
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .body-sm {
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  .body-xs {
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+    font-weight: 500;
+  }
+
+  .text-muted {
+    color: var(--muted-foreground);
+  }
+
+  .text-subtle {
+    color: color-mix(in oklch, var(--foreground) 55%, white);
+  }
+
+  .stack-sm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .stack-md {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .stack-lg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .section-padding {
+    padding-block: var(--space-9);
+    padding-inline: clamp(var(--space-4), 4vw, var(--space-10));
   }
 }

@@ -4,6 +4,9 @@ import { TagList } from "./TagList";
 import { CreateTagButton } from "./CreateTagButton";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { ErrorNotification } from "./ErrorNotification";
+import { PageShell, PageSection } from "@/components/layout/PageShell";
+import { PageHeader, PageHeaderHeading, PageHeaderActions } from "@/components/ui/page-header";
+import { SectionShell } from "@/components/ui/section-shell";
 
 export function TagManagement() {
   const { tags, isLoading: isLoadingTags, error: tagsError, mutate: mutateTags } = useTags();
@@ -32,87 +35,108 @@ export function TagManagement() {
 
   if (tagsError || decksError) {
     return (
-      <div className="space-y-4">
-        {tagsError && <ErrorNotification message={tagsError.message} error={tagsError} onRetry={() => mutateTags()} />}
-        {decksError && (
-          <ErrorNotification message={decksError.message} error={decksError} onRetry={() => mutateDecks()} />
-        )}
-      </div>
+      <PageShell background="plain">
+        <PageSection spacing="md">
+          {tagsError && (
+            <ErrorNotification message={tagsError.message} error={tagsError} onRetry={() => mutateTags()} />
+          )}
+          {decksError && (
+            <ErrorNotification message={decksError.message} error={decksError} onRetry={() => mutateDecks()} />
+          )}
+        </PageSection>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with create button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">Your Tags</h2>
-          <p className="text-muted-foreground">Manage tags to organize your flashcards</p>
-        </div>
-        <CreateTagButton decks={decks} onSuccess={handleCreateSuccess} />
-      </div>
+    <PageShell background="plain">
+      <PageSection spacing="lg">
+        <PageHeader>
+          <PageHeaderHeading
+            title="Twoje tagi"
+            description="Zarządzaj tagami globalnymi i taliami, aby szybciej filtrować fiszki."
+          />
+          <PageHeaderActions>
+            <CreateTagButton decks={decks} onSuccess={handleCreateSuccess} />
+          </PageHeaderActions>
+        </PageHeader>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-lg">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-foreground">Scope:</label>
-          <select
-            value={selectedScope}
-            onChange={(e) => {
-              setSelectedScope(e.target.value as "all" | "global" | "deck");
-              if (e.target.value !== "deck") {
-                setSelectedDeckId("");
-              }
-            }}
-            className="px-3 py-1 border border-input bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="all">All Tags</option>
-            <option value="global">Global Tags</option>
-            <option value="deck">Deck Tags</option>
-          </select>
-        </div>
+        <SectionShell>
+          <PageSection spacing="md">
+            <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border/70 bg-card/70 p-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground" htmlFor="tag-scope-filter">
+                  Zakres:
+                </label>
+                <select
+                  id="tag-scope-filter"
+                  value={selectedScope}
+                  onChange={(e) => {
+                    setSelectedScope(e.target.value as "all" | "global" | "deck");
+                    if (e.target.value !== "deck") {
+                      setSelectedDeckId("");
+                    }
+                  }}
+                  className="rounded-md border border-input bg-background px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="all">Wszystkie tagi</option>
+                  <option value="global">Tagi globalne</option>
+                  <option value="deck">Tagi talii</option>
+                </select>
+              </div>
 
-        {selectedScope === "deck" && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-foreground">Deck:</label>
-            {isLoadingDecks ? (
-              <SkeletonLoader className="h-8 w-32" />
-            ) : (
-              <select
-                value={selectedDeckId}
-                onChange={(e) => setSelectedDeckId(e.target.value)}
-                className="px-3 py-1 border border-input bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">All Decks</option>
-                {decks.map((deck) => (
-                  <option key={deck.id} value={deck.id}>
-                    {deck.name}
-                  </option>
+              {selectedScope === "deck" && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="tag-deck-filter">
+                    Talia:
+                  </label>
+                  {isLoadingDecks ? (
+                    <SkeletonLoader className="h-8 w-32" />
+                  ) : (
+                    <select
+                      id="tag-deck-filter"
+                      value={selectedDeckId}
+                      onChange={(e) => setSelectedDeckId(e.target.value)}
+                      className="rounded-md border border-input bg-background px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">Wszystkie talie</option>
+                      {decks.map((deck) => (
+                        <option key={deck.id} value={deck.id}>
+                          {deck.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {isLoadingTags ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonLoader key={i} className="h-20" />
                 ))}
-              </select>
+              </div>
+            ) : filteredTags.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="mb-4 text-6xl">🏷️</div>
+                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                  {selectedScope === "all"
+                    ? "Brak tagów"
+                    : selectedScope === "global"
+                      ? "Brak tagów globalnych"
+                      : "Brak tagów talii"}
+                </h3>
+                <p className="mb-6 text-muted-foreground">
+                  Utwórz swój pierwszy tag, aby usprawnić organizację fiszek.
+                </p>
+              </div>
+            ) : (
+              <TagList tags={filteredTags} decks={decks} onTagUpdate={handleTagUpdate} />
             )}
-          </div>
-        )}
-      </div>
-
-      {/* Tags list */}
-      {isLoadingTags ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <SkeletonLoader key={i} className="h-20" />
-          ))}
-        </div>
-      ) : filteredTags.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🏷️</div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            {selectedScope === "all" ? "No tags yet" : selectedScope === "global" ? "No global tags" : "No deck tags"}
-          </h3>
-          <p className="text-muted-foreground mb-6">Create your first tag to start organizing your flashcards</p>
-        </div>
-      ) : (
-        <TagList tags={filteredTags} decks={decks} onTagUpdate={handleTagUpdate} />
-      )}
-    </div>
+          </PageSection>
+        </SectionShell>
+      </PageSection>
+    </PageShell>
   );
 }

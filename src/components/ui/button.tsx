@@ -16,6 +16,11 @@ const buttonVariants = cva(
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        subtle: "bg-muted text-muted-foreground shadow-none hover:bg-muted/80 hover:text-foreground",
+        pill: "rounded-full bg-secondary/80 text-secondary-foreground shadow-xs hover:bg-secondary/70",
+        icon: "rounded-full bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/70 focus-visible:ring-ring/40 [&_svg]:size-5 p-0",
+        pulse:
+          "bg-primary text-primary-foreground shadow-[0_12px_35px_rgba(99,102,241,0.35)] hover:bg-primary/90 focus-visible:ring-primary/30 data-[state=loading]:animate-pulse",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -32,19 +37,17 @@ const buttonVariants = cva(
   }
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
+const Button = React.forwardRef<
+  React.ElementRef<"button">,
+  React.ComponentPropsWithoutRef<"button"> &
+    VariantProps<typeof buttonVariants> & {
+      asChild?: boolean;
+    }
+>(({ className, variant, size, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "button";
 
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
-}
+  return <Comp ref={ref} data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+});
+Button.displayName = "Button";
 
 export { Button, buttonVariants };

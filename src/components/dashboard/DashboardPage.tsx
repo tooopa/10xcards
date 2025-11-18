@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DeckDto, ErrorResponse } from "@/types";
 import { useDashboard } from "@/lib/hooks/useDashboard";
 import { Logger } from "@/lib/logger";
@@ -16,6 +15,10 @@ import { type CreateDeckFormData } from "@/lib/validation/dashboard";
 import { useApp } from "@/contexts/AppContext";
 import { EditDeckModal } from "./EditDeckModal";
 import { cn } from "@/lib/utils";
+import { PageShell, PageSection, PageGrid } from "@/components/layout/PageShell";
+import { SectionShell } from "@/components/ui/section-shell";
+import { PageHeader, PageHeaderHeading, PageHeaderActions } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 
 const dashboardLogger = new Logger("DashboardPage");
 
@@ -190,144 +193,102 @@ export function DashboardPage() {
     );
   }
 
-  return (
-    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_60%)]">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-70 [mask-image:radial-gradient(circle_at_top,_white,_transparent_70%)]"
-        aria-hidden="true"
-      />
-      <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-6">
-        {/* Hero Banner */}
-        <section className="mb-6 rounded-3xl border border-border/60 bg-card/70 p-4 text-xs text-muted-foreground shadow-sm backdrop-blur">
-          <p className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
-              <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
-              Nowość
-            </span>
-            Widok dashboardu wspiera skróty klawiaturowe i szybkie tworzenie talii przy pomocy AI.
-          </p>
-        </section>
+  const maxDeckSize = Math.max(...decks.map((deck) => deck.flashcard_count), 0);
 
-        {/* Main Content */}
-        <main className="space-y-8">
-          {/* Hero */}
-          <section className="rounded-3xl border bg-card/70 p-6 shadow-sm ring-1 ring-border/50 backdrop-blur">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Panel główny</p>
-                <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-                  Wszystkie talie i generacje zawsze pod ręką
-                </h2>
-                <p className="text-muted-foreground max-w-2xl">
-                  Wyszukuj, filtruj i twórz talie szybciej niż kiedykolwiek dzięki skrótom klawiaturowym i
-                  natychmiastowym podpowiedziom.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <ShortcutHint combo="Ctrl + F" label="Szukaj talii" />
-                  <ShortcutHint combo="Ctrl + N" label="Utwórz talię" />
-                </div>
-              </div>
-              <div className="flex w-full flex-col gap-4 rounded-2xl border bg-background/80 p-4 text-sm text-muted-foreground shadow-inner sm:flex-row sm:items-center sm:justify-between lg:w-auto">
-                <div>
-                  <p className="text-xs uppercase tracking-widest">Łącznie talii</p>
-                  <p className="text-2xl font-semibold text-foreground">{decks.length}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest">Łącznie fiszek</p>
-                  <p className="text-2xl font-semibold text-foreground">{totalFlashcards}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest">Domyślne talie</p>
-                  <p className="text-2xl font-semibold text-foreground">
-                    {decks.filter((deck) => deck.is_default).length}
-                  </p>
-                </div>
+  return (
+    <>
+      <PageShell>
+        <PageSection spacing="lg">
+          <SectionShell className="text-xs text-muted-foreground" padded>
+            <p className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
+                <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+                Nowość
+              </span>
+              Widok dashboardu wspiera skróty klawiaturowe i szybkie tworzenie talii przy pomocy AI.
+            </p>
+          </SectionShell>
+
+          <PageHeader>
+            <div className="space-y-4">
+              <PageHeaderHeading
+                eyebrow="Panel główny"
+                title="Wszystkie talie i generacje zawsze pod ręką"
+                description="Wyszukuj, filtruj i twórz talie szybciej niż kiedykolwiek dzięki skrótom klawiaturowym i natychmiastowym podpowiedziom."
+              />
+              <div className="flex flex-wrap gap-2">
+                <ShortcutHint combo="Ctrl + F" label="Szukaj talii" />
+                <ShortcutHint combo="Ctrl + N" label="Utwórz talię" />
               </div>
             </div>
-          </section>
+            <PageHeaderActions>
+              <Button onClick={openCreateModal} className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                Utwórz talię
+              </Button>
+              <a href="/generate" className={cn(buttonVariants({ variant: "outline" }), "gap-2 inline-flex")}>
+                <Sparkles className="w-4 h-4" />
+                Generuj AI fiszki
+              </a>
+            </PageHeaderActions>
+          </PageHeader>
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-4">
-            <Button onClick={openCreateModal} className="gap-2">
-              <Sparkles className="w-4 h-4" />
-              Utwórz talię
-            </Button>
+          <PageGrid columns={{ base: 1, md: 2, lg: 4 }}>
+            <StatCard label="Łącznie talii" value={decks.length} description="aktywnych talii w Twojej bibliotece" />
+            <StatCard
+              label="Łącznie fiszek"
+              value={totalFlashcards}
+              description="sumaryczna liczba fiszek"
+              variant="success"
+            />
+            <StatCard
+              label="Domyślne talie"
+              value={decks.filter((deck) => deck.is_default).length}
+              description="automatycznie utworzone zestawy"
+              variant="warning"
+            />
+            <StatCard
+              label="Maks. fiszek w talii"
+              value={maxDeckSize}
+              description="największa talia w kolekcji"
+              variant="danger"
+            />
+          </PageGrid>
 
-            <a href="/generate" className={cn(buttonVariants({ variant: "outline" }), "gap-2 inline-flex")}>
-              <Sparkles className="w-4 h-4" />
-              Generuj AI fiszki
-            </a>
-          </div>
+          <SectionShell>
+            <PageSection spacing="md">
+              <SearchAndFilters
+                ref={searchFiltersRef}
+                filters={filters}
+                onFiltersChange={setFilters}
+                isLoading={isLoading}
+              />
 
-          {/* Search and Filters */}
-          <SearchAndFilters
-            ref={searchFiltersRef}
-            filters={filters}
-            onFiltersChange={setFilters}
-            isLoading={isLoading}
-          />
+              <DeckList decks={decks} isLoading={isLoading} error={error} onDeckAction={handleDeckAction} />
 
-          {/* Deck List */}
-          <DeckList decks={decks} isLoading={isLoading} error={error} onDeckAction={handleDeckAction} />
+              {pagination.total > 0 && (
+                <PaginationControls pagination={pagination} onPageChange={setPage} onLimitChange={setLimit} />
+              )}
+            </PageSection>
+          </SectionShell>
+        </PageSection>
+      </PageShell>
 
-          {/* Pagination */}
-          {pagination.total > 0 && (
-            <PaginationControls pagination={pagination} onPageChange={setPage} onLimitChange={setLimit} />
-          )}
+      <CreateDeckModal isOpen={createModalOpen} onClose={closeCreateModal} onSubmit={handleCreateDeck} />
 
-          {/* Statistics Card */}
-          {decks.length > 0 && (
-            <Card className="mt-8">
-              <CardHeader>
-                <CardTitle>Statystyki</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{decks.length}</div>
-                    <div className="text-sm text-muted-foreground">talii</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {decks.reduce((sum, deck) => sum + deck.flashcard_count, 0)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">fiszki</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {decks.filter((deck) => deck.is_default).length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">domyślnych</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {Math.max(...decks.map((deck) => deck.flashcard_count), 0)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">maks. w talii</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </main>
+      <DeleteDeckModal
+        isOpen={deleteModalState.isOpen}
+        deck={deleteModalState.deck}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteDeck}
+      />
 
-        {/* Modals */}
-        <CreateDeckModal isOpen={createModalOpen} onClose={closeCreateModal} onSubmit={handleCreateDeck} />
-
-        <DeleteDeckModal
-          isOpen={deleteModalState.isOpen}
-          deck={deleteModalState.deck}
-          onClose={closeDeleteModal}
-          onConfirm={handleDeleteDeck}
-        />
-
-        <EditDeckModal
-          isOpen={editModalState.isOpen}
-          deck={editModalState.deck}
-          onClose={closeEditModal}
-          onSubmit={handleEditDeck}
-        />
-      </div>
-    </div>
+      <EditDeckModal
+        isOpen={editModalState.isOpen}
+        deck={editModalState.deck}
+        onClose={closeEditModal}
+        onSubmit={handleEditDeck}
+      />
+    </>
   );
 }

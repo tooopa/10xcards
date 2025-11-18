@@ -39,7 +39,11 @@ export function RateLimitIndicator({ rateLimit, onUpgradeClick }: RateLimitIndic
   const isAtLimit = !rateLimit.can_generate;
 
   return (
-    <Card className={`transition-colors ${isAtLimit ? "border-destructive" : isNearLimit ? "border-orange-500" : ""}`}>
+    <Card
+      className={`transition-colors ${
+        isAtLimit ? "border-destructive" : isNearLimit ? "border-[color:var(--color-warning-strong)]" : ""
+      }`}
+    >
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Zap className="h-4 w-4" />
@@ -52,7 +56,13 @@ export function RateLimitIndicator({ rateLimit, onUpgradeClick }: RateLimitIndic
             Wykorzystane: {rateLimit.current_count} / {rateLimit.limit}
           </span>
           <span
-            className={`font-medium ${isAtLimit ? "text-destructive" : isNearLimit ? "text-orange-600" : "text-green-600"}`}
+            className={`font-medium ${
+              isAtLimit
+                ? "text-destructive"
+                : isNearLimit
+                  ? "text-[color:var(--color-warning-strong)]"
+                  : "text-[color:var(--color-success-strong)]"
+            }`}
           >
             {rateLimit.remaining} pozostało
           </span>
@@ -60,7 +70,13 @@ export function RateLimitIndicator({ rateLimit, onUpgradeClick }: RateLimitIndic
 
         <Progress
           value={progressPercentage}
-          className={`h-2 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-orange-500" : ""}`}
+          className={`h-2 ${
+            isAtLimit
+              ? "[&>div]:bg-destructive"
+              : isNearLimit
+                ? "[&>div]:bg-[color:var(--color-warning-strong)]"
+                : "[&>div]:bg-[color:var(--color-success-strong)]"
+          }`}
         />
 
         <div className="flex items-center justify-between">
@@ -84,7 +100,7 @@ export function RateLimitIndicator({ rateLimit, onUpgradeClick }: RateLimitIndic
         )}
 
         {isNearLimit && !isAtLimit && (
-          <div className="text-xs text-orange-600 bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
+          <div className="text-xs text-[color:var(--color-warning-strong)] bg-[color:var(--color-warning-soft)] p-2 rounded">
             Zbliżasz się do limitu generacji. Uważaj na wykorzystanie.
           </div>
         )}

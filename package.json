@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "lint": "eslint .",
+    "lint": "npm run check:tokens && eslint .",
+    "check:tokens": "node scripts/check-design-tokens.mjs",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
   },
@@ -71,7 +72,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
-      "eslint --fix"
+      "eslint --fix",
+      "npm run check:tokens"
     ],
     "*.{json,css,md}": [
       "prettier --write"

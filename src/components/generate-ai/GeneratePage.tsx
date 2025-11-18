@@ -10,6 +10,9 @@ import { GenerationProgress } from "./GenerationProgress";
 import { SuggestionsList } from "./SuggestionsList";
 import { AcceptSuggestionsModal } from "./AcceptSuggestionsModal";
 import type { GeneratePageProps } from "../../lib/validation/generate-ai";
+import { PageShell, PageSection } from "@/components/layout/PageShell";
+import { SectionShell } from "@/components/ui/section-shell";
+import { PageHeader, PageHeaderHeading, PageHeaderActions } from "@/components/ui/page-header";
 
 export function GeneratePage({ initialDeckId, initialModel }: GeneratePageProps) {
   const {
@@ -87,197 +90,185 @@ export function GeneratePage({ initialDeckId, initialModel }: GeneratePageProps)
   const hasErrors = Object.keys(formErrors).length > 0 || generationError;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Powrót do dashboard
-              </a>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Sparkles className="h-8 w-8 text-primary" />
-                Generuj fiszki z AI
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Użyj sztucznej inteligencji do automatycznego tworzenia fiszek z tekstu źródłowego
-              </p>
-            </div>
-          </div>
+    <>
+      <PageShell background="plain">
+        <PageSection spacing="lg">
+          <PageHeader>
+            <PageHeaderHeading
+              eyebrow="Generowanie AI"
+              title={
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-7 w-7 text-primary" />
+                  Generuj fiszki z AI
+                </span>
+              }
+              description="Wykorzystaj modele OpenRouter, aby stworzyć nowe fiszki z istniejącego materiału w kilka sekund."
+            />
+            <PageHeaderActions className="flex-col items-stretch gap-4 sm:flex-row sm:items-center">
+              <Button variant="ghost" size="sm" asChild className="justify-center">
+                <a href="/dashboard">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Powrót do dashboardu
+                </a>
+              </Button>
+              <div className="hidden md:block">
+                <RateLimitIndicator
+                  rateLimit={rateLimit}
+                  onUpgradeClick={() => {
+                    console.log("Navigate to upgrade");
+                  }}
+                />
+              </div>
+            </PageHeaderActions>
+          </PageHeader>
 
-          {/* Rate Limit Indicator */}
-          <div className="hidden md:block">
+          <div className="md:hidden">
             <RateLimitIndicator
               rateLimit={rateLimit}
               onUpgradeClick={() => {
-                // TODO: Navigate to upgrade page
                 console.log("Navigate to upgrade");
               }}
             />
           </div>
-        </div>
 
-        {/* Mobile Rate Limit */}
-        <div className="md:hidden mb-6">
-          <RateLimitIndicator
-            rateLimit={rateLimit}
-            onUpgradeClick={() => {
-              // TODO: Navigate to upgrade page
-              console.log("Navigate to upgrade");
-            }}
-          />
-        </div>
+          {hasErrors && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {generationError ? (
+                  <div>
+                    <p className="font-medium">Błąd generowania:</p>
+                    <p>{generationError.message}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-medium">Błędy formularza:</p>
+                    <ul className="list-disc list-inside mt-2">
+                      {Object.entries(formErrors).map(([field, error]) => (
+                        <li key={field}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {/* Error Display */}
-        {hasErrors && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {generationError ? (
-                <div>
-                  <p className="font-medium">Błąd generowania:</p>
-                  <p>{generationError.message}</p>
-                </div>
-              ) : (
-                <div>
-                  <p className="font-medium">Błędy formularza:</p>
-                  <ul className="list-disc list-inside mt-2">
-                    {Object.entries(formErrors).map(([field, error]) => (
-                      <li key={field}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
+          <SectionShell>
+            <div className="grid gap-8 lg:grid-cols-3">
+              <div className="space-y-8 lg:col-span-2">
+                {!hasSuggestions && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Konfiguracja generowania</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <GenerateForm
+                        onSubmit={handleFormSubmit}
+                        rateLimit={rateLimit}
+                        isGenerating={isGenerating}
+                        availableDecks={availableDecks}
+                        availableModels={availableModels}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Generate Form */}
-            {!hasSuggestions && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Konfiguracja generowania</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <GenerateForm
-                    onSubmit={handleFormSubmit}
-                    rateLimit={rateLimit}
-                    isGenerating={isGenerating}
-                    availableDecks={availableDecks}
-                    availableModels={availableModels}
+                {hasSuggestions && (
+                  <SuggestionsList
+                    suggestions={suggestions}
+                    onSuggestionChange={handleSuggestionChange}
+                    onSuggestionDelete={handleSuggestionDelete}
+                    onAcceptSelected={handleAcceptSelected}
+                    generationMetadata={generationMetadata}
                   />
-                </CardContent>
-              </Card>
-            )}
+                )}
 
-            {/* Suggestions List */}
-            {hasSuggestions && (
-              <SuggestionsList
-                suggestions={suggestions}
-                onSuggestionChange={handleSuggestionChange}
-                onSuggestionDelete={handleSuggestionDelete}
-                onAcceptSelected={handleAcceptSelected}
-                generationMetadata={generationMetadata}
-              />
-            )}
+                {estimatedCost > 0 && !hasSuggestions && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Szacowany koszt generowania:</span>
+                        <span className="text-lg font-semibold text-primary">${estimatedCost.toFixed(4)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
 
-            {/* Cost Estimate */}
-            {estimatedCost > 0 && !hasSuggestions && (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Szacowany koszt generowania:</span>
-                    <span className="text-lg font-semibold text-primary">${estimatedCost.toFixed(4)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Jak to działa?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-sm">
+                    <div className="flex gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                        1
+                      </div>
+                      <p>Wklej lub wpisz tekst źródłowy (minimum 1000 znaków)</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                        2
+                      </div>
+                      <p>Wybierz model AI i talię docelową</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                        3
+                      </div>
+                      <p>Wygeneruj fiszki i przejrzyj sugestie</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                        4
+                      </div>
+                      <p>Akceptuj wybrane fiszki do swojej talii</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Help Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Jak to działa?</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                    1
-                  </div>
-                  <p>Wklej lub wpisz tekst źródłowy (minimum 1000 znaków)</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                    2
-                  </div>
-                  <p>Wybierz model AI i talię docelową</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                    3
-                  </div>
-                  <p>Wygeneruj fiszki i przejrzyj sugestie</p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                    4
-                  </div>
-                  <p>Akceptuj wybrane fiszki do swojej talii</p>
-                </div>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Wskazówki</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-muted-foreground">
+                    <p>• Im dłuższy i bardziej szczegółowy tekst, tym lepsze fiszki</p>
+                    <p>• Wybieraj teksty z jasną strukturą i kluczowymi koncepcjami</p>
+                    <p>• Możesz edytować wygenerowane fiszki przed akceptacją</p>
+                    <p>• Sprawdzaj jakość — AI nie zawsze rozumie kontekst poprawnie</p>
+                    <p>• Używaj tagów do lepszej organizacji fiszek</p>
+                  </CardContent>
+                </Card>
 
-            {/* Tips Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Wskazówki</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <p>• Im dłuższy i bardziej szczegółowy tekst, tym lepsze fiszki</p>
-                <p>• Wybieraj teksty z jasną strukturą i kluczowymi koncepcjami</p>
-                <p>• Możesz edytować wygenerowane fiszki przed akceptacją</p>
-                <p>• Sprawdzaj jakość - AI nie zawsze rozumie kontekst poprawnie</p>
-                <p>• Używaj tagów do lepszej organizacji fiszek</p>
-              </CardContent>
-            </Card>
+                {(hasSuggestions || hasErrors) && (
+                  <Button variant="outline" onClick={resetForm} className="w-full">
+                    Rozpocznij od nowa
+                  </Button>
+                )}
+              </div>
+            </div>
+          </SectionShell>
+        </PageSection>
+      </PageShell>
 
-            {/* Reset Button */}
-            {(hasSuggestions || hasErrors) && (
-              <Button variant="outline" onClick={resetForm} className="w-full">
-                Rozpocznij od nowa
-              </Button>
-            )}
-          </div>
-        </div>
+      <GenerationProgress
+        isVisible={isGenerating}
+        currentStep={generationStep}
+        progress={generationProgress}
+        estimatedTimeRemaining={30}
+        onCancel={cancelGeneration}
+      />
 
-        {/* Generation Progress Modal */}
-        <GenerationProgress
-          isVisible={isGenerating}
-          currentStep={generationStep}
-          progress={generationProgress}
-          estimatedTimeRemaining={30} // Mock value
-          onCancel={cancelGeneration}
-        />
-
-        {/* Accept Suggestions Modal */}
-        <AcceptSuggestionsModal
-          isOpen={acceptModalOpen}
-          selectedSuggestions={selectedSuggestions}
-          onClose={handleAcceptModalClose}
-          onAccept={handleAcceptSuggestions}
-          availableDecks={availableDecks}
-          availableTags={availableTags}
-        />
-      </div>
-    </div>
+      <AcceptSuggestionsModal
+        isOpen={acceptModalOpen}
+        selectedSuggestions={selectedSuggestions}
+        onClose={handleAcceptModalClose}
+        onAccept={handleAcceptSuggestions}
+        availableDecks={availableDecks}
+        availableTags={availableTags}
+      />
+    </>
   );
 }

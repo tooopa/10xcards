@@ -19,31 +19,51 @@ const alertVariants = cva(
   }
 );
 
-function Alert({ className, variant, ...props }: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
-  return <div data-slot="alert" role="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
-}
-
-function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
+const Alert = React.forwardRef<
+  React.ElementRef<"div">,
+  React.ComponentPropsWithoutRef<"div"> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => {
   return (
     <div
-      data-slot="alert-title"
-      className={cn("col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight", className)}
+      ref={ref}
+      data-slot="alert"
+      role="alert"
+      className={cn(alertVariants({ variant }), className)}
       {...props}
     />
   );
-}
+});
+Alert.displayName = "Alert";
 
-function AlertDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn(
-        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+const AlertTitle = React.forwardRef<React.ElementRef<"div">, React.ComponentPropsWithoutRef<"div">>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        data-slot="alert-title"
+        className={cn("col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight", className)}
+        {...props}
+      />
+    );
+  }
+);
+AlertTitle.displayName = "AlertTitle";
+
+const AlertDescription = React.forwardRef<React.ElementRef<"div">, React.ComponentPropsWithoutRef<"div">>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        data-slot="alert-description"
+        className={cn(
+          "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+AlertDescription.displayName = "AlertDescription";
 
 export { Alert, AlertTitle, AlertDescription };

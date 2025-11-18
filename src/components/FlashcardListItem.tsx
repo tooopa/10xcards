@@ -27,8 +27,10 @@ export function FlashcardListItem({ flashcard, onAccept, onReject, onEdit }: Fla
   return (
     <div
       className={cn(
-        "border rounded-lg p-4 space-y-3 transition-colors h-full",
-        flashcard.accepted ? "bg-green-50/50 border-green-200" : "bg-white",
+        "h-full space-y-3 rounded-2xl border p-4 transition-colors",
+        flashcard.accepted
+          ? "bg-[color:var(--color-success-soft)] border-[color:var(--color-success-border)]"
+          : "bg-card/80 border-border/70",
         !flashcard.accepted && "opacity-75"
       )}
     >
@@ -92,7 +94,9 @@ export function FlashcardListItem({ flashcard, onAccept, onReject, onEdit }: Fla
         </div>
       </div>
 
-      {flashcard.edited && <div className="text-sm text-muted-foreground">Edited</div>}
+      {flashcard.edited && (
+        <div className="text-sm font-medium text-[color:var(--color-info-strong)]">Zmieniono treść</div>
+      )}
     </div>
   );
 }

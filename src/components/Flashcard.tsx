@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 
 interface FlashcardProps {
@@ -12,14 +12,27 @@ export function Flashcard({ question, answer, className }: FlashcardProps) {
 
   const handleToggle = () => setShowAnswer((prev) => !prev);
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleToggle();
+    }
+  };
+
   return (
     <div
-      className={cn("border rounded-lg p-6 shadow-sm cursor-pointer select-none bg-white dark:bg-slate-800", className)}
+      className={cn(
+        "cursor-pointer select-none rounded-2xl border border-border/70 bg-card/95 p-6 shadow-sm transition-colors",
+        className
+      )}
       onClick={handleToggle}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
     >
-      <p className="text-lg font-semibold mb-4">{showAnswer ? "Answer" : "Question"}</p>
-      <p className="text-base text-slate-700 dark:text-slate-200">{showAnswer ? answer : question}</p>
-      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400 italic">
+      <p className="heading-sm mb-4">{showAnswer ? "Answer" : "Question"}</p>
+      <p className="body-base text-foreground">{showAnswer ? answer : question}</p>
+      <p className="body-sm mt-4 italic text-muted-foreground">
         {showAnswer ? "Click to hide answer" : "Click to reveal answer"}
       </p>
     </div>

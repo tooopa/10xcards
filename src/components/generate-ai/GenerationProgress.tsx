@@ -15,7 +15,6 @@ const STEP_MESSAGES: Record<GenerationStep, string> = {
   complete: "Generowanie zakończone pomyślnie!",
 };
 
-
 export function GenerationProgress({
   isVisible,
   currentStep,
@@ -46,12 +45,12 @@ export function GenerationProgress({
   const hasError = currentStep === "complete" && progress < 100; // Simplified error detection
 
   return (
-    <Dialog open={isVisible} onOpenChange={() => {}}>
+    <Dialog open={isVisible}>
       <DialogContent className="sm:max-w-md" hideCloseButton>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isComplete ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-[color:var(--color-success-strong)]" />
             ) : hasError ? (
               <AlertCircle className="h-5 w-5 text-destructive" />
             ) : (
@@ -70,7 +69,9 @@ export function GenerationProgress({
             </div>
             <Progress
               value={progress}
-              className={`h-2 ${isComplete ? "[&>div]:bg-green-600" : hasError ? "[&>div]:bg-destructive" : ""}`}
+              className={`h-2 ${
+                isComplete ? "[&>div]:bg-[color:var(--color-success-strong)]" : hasError ? "[&>div]:bg-destructive" : ""
+              }`}
             />
           </div>
 

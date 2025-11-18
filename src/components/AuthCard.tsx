@@ -3,6 +3,8 @@ import { toast } from "sonner";
 
 import { supabaseClient } from "@/db/supabase.client";
 import { Button } from "@/components/ui/button";
+import { SectionShell } from "@/components/ui/section-shell";
+import { H2, Lead, Eyebrow } from "@/components/ui/typography";
 
 export type AuthMode = "signin" | "signup";
 
@@ -165,36 +167,36 @@ export function AuthCard({ onAuthSuccess, initialMode = "signin", showHeader = t
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-8 shadow-xl w-full space-y-6">
+    <SectionShell className="w-full space-y-6">
       {showHeader && (
-        <div className="text-center space-y-2">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">10xCards</p>
-          <h2 className="text-3xl font-bold text-foreground">{headingText}</h2>
-          <p className="text-muted-foreground">{descriptionText}</p>
+        <div className="space-y-3 text-center">
+          <Eyebrow>10xCards</Eyebrow>
+          <H2>{headingText}</H2>
+          <Lead>{descriptionText}</Lead>
         </div>
       )}
 
-      <div className="flex rounded-lg border border-border bg-muted/30 p-1 text-sm font-medium">
-        <button
+      <div className="flex gap-2 rounded-full border border-border bg-muted/30 p-1 text-sm font-medium">
+        <Button
           type="button"
-          className={`flex-1 rounded-md px-4 py-2 transition ${
-            mode === "signin" ? "bg-background shadow text-foreground" : "text-muted-foreground"
-          }`}
+          variant={mode === "signin" ? "default" : "ghost"}
+          size="sm"
+          className="flex-1 rounded-full"
           onClick={() => setMode("signin")}
           disabled={isLoading}
         >
           Sign in
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`flex-1 rounded-md px-4 py-2 transition ${
-            mode === "signup" ? "bg-background shadow text-foreground" : "text-muted-foreground"
-          }`}
+          variant={mode === "signup" ? "default" : "ghost"}
+          size="sm"
+          className="flex-1 rounded-full"
           onClick={() => setMode("signup")}
           disabled={isLoading}
         >
           Create account
-        </button>
+        </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -261,15 +263,16 @@ export function AuthCard({ onAuthSuccess, initialMode = "signin", showHeader = t
         </Button>
 
         {/* Debug button for testing */}
-        <button
+        <Button
           type="button"
+          variant="link"
+          className="mt-2 w-full text-xs"
           onClick={async () => {
             await testSupabaseConnection();
           }}
-          className="w-full mt-2 text-xs text-gray-500 underline"
         >
           Test Connection
-        </button>
+        </Button>
       </form>
 
       {!showSuccess && (
@@ -298,6 +301,6 @@ export function AuthCard({ onAuthSuccess, initialMode = "signin", showHeader = t
           </Button>
         </div>
       )}
-    </div>
+    </SectionShell>
   );
 }
