@@ -25,41 +25,21 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     // Validate flashcard ID
     const flashcardId = params.id;
     if (!flashcardId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Flashcard ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Flashcard ID is required", null, 400);
     }
 
     if (!validateNumericId(flashcardId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Flashcard ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Flashcard ID must be a valid number", null, 400);
     }
 
     // Validate tag ID
     const tagId = params.tag_id;
     if (!tagId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Tag ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Tag ID is required", null, 400);
     }
 
     if (!validateNumericId(tagId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Tag ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Tag ID must be a valid number", null, 400);
     }
 
     // Verify flashcard exists and belongs to user
@@ -77,19 +57,10 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     console.error("Error removing flashcard tag:", error);
 
     // Check if error is "not associated" from service
-    if (
-      error instanceof Error &&
-      error.message.includes("not associated")
-    ) {
+    if (error instanceof Error && error.message.includes("not associated")) {
       return createNotFoundResponse("Tag association");
     }
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to remove tag",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to remove tag", null, 500);
   }
 };
-

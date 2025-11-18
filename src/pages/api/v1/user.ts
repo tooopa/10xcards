@@ -57,21 +57,10 @@ export const DELETE: APIRoute = async ({ locals }) => {
 
     // Handle specific error types
     if (error instanceof UserDeletionError) {
-      return createErrorResponse(
-        "auth_error",
-        "Failed to delete user account",
-        null,
-        500
-      );
+      return createErrorResponse("auth_error", "Failed to delete user account", null, 500);
     }
 
     // Generic error response
-    return createErrorResponse(
-      "database_error",
-      "Failed to delete user account",
-      null,
-      500
-    );
+    return createErrorResponse("database_error", "Failed to delete user account", null, 500);
   }
 };
-

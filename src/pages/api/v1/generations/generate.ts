@@ -1,8 +1,8 @@
 /**
  * POST /api/v1/generations/generate
- * 
+ *
  * Generates flashcard suggestions using AI
- * 
+ *
  * Flow:
  * 1. Validate request body
  * 2. Check rate limit (10/hour)
@@ -61,9 +61,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       await RateLimitService.enforceGenerationLimit(locals.supabase, userId);
     } catch (error) {
       if (error instanceof RateLimitExceededError) {
-        const retryAfter = RateLimitService.getRetryAfterSeconds(
-          error.rateLimitInfo.resetAt
-        );
+        const retryAfter = RateLimitService.getRetryAfterSeconds(error.rateLimitInfo.resetAt);
 
         return createRateLimitResponse(
           error.message,
@@ -79,19 +77,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // Step 2: Verify deck ownership
-    const deckExists = await verifyDeckOwnership(
-      locals.supabase,
-      userId,
-      deck_id
-    );
+    const deckExists = await verifyDeckOwnership(locals.supabase, userId, deck_id);
 
     if (!deckExists) {
-      return createErrorResponse(
-        "invalid_deck",
-        "Deck not found or access denied",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_deck", "Deck not found or access denied", null, 400);
     }
 
     // Step 3: Calculate source text hash (for deduplication and logging)
@@ -140,12 +129,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         const statusCode = FlashcardAIService.getErrorStatusCode(error);
         const message = FlashcardAIService.getErrorMessage(error);
 
-        return createErrorResponse(
-          "ai_service_error",
-          message,
-          null,
-          statusCode
-        );
+        return createErrorResponse("ai_service_error", message, null, statusCode);
       }
 
       // Unexpected error
@@ -200,12 +184,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    return createErrorResponse(
-      "internal_error",
-      "An unexpected error occurred during generation",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "An unexpected error occurred during generation", null, 500);
   }
 };
-

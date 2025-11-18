@@ -4,26 +4,16 @@
  */
 
 import type { APIRoute } from "astro";
-import {
-  listFlashcards,
-  createFlashcard,
-} from "../../../../lib/services/flashcards/flashcard.service";
+import { listFlashcards, createFlashcard } from "../../../../lib/services/flashcards/flashcard.service";
 import { verifyDeckOwnership } from "../../../../lib/services/decks/deck-utils";
-import {
-  FlashcardListQuerySchema,
-  CreateFlashcardSchema,
-} from "../../../../lib/validation/flashcards";
+import { FlashcardListQuerySchema, CreateFlashcardSchema } from "../../../../lib/validation/flashcards";
 import {
   createErrorResponse,
   createValidationErrorResponse,
   createSuccessResponse,
   getUserIdFromLocals,
 } from "../../../../lib/utils/api-errors";
-import type {
-  FlashcardListResponseDto,
-  FlashcardDto,
-  PaginationMeta,
-} from "../../../../types";
+import type { FlashcardListResponseDto, PaginationMeta } from "../../../../types";
 
 export const prerender = false;
 
@@ -54,11 +44,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     }
 
     // Query flashcards using service
-    const result = await listFlashcards(
-      locals.supabase,
-      userId,
-      validationResult.data
-    );
+    const result = await listFlashcards(locals.supabase, userId, validationResult.data);
 
     // Calculate pagination metadata
     const page = validationResult.data.page;
@@ -82,12 +68,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
   } catch (error) {
     console.error("Error listing flashcards:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to list flashcards",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to list flashcards", null, 500);
   }
 };
 
@@ -110,19 +91,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { deck_id, front, back } = validationResult.data;
 
     // Verify deck ownership
-    const deckExists = await verifyDeckOwnership(
-      locals.supabase,
-      userId,
-      deck_id
-    );
+    const deckExists = await verifyDeckOwnership(locals.supabase, userId, deck_id);
 
     if (!deckExists) {
-      return createErrorResponse(
-        "invalid_deck",
-        "Deck not found or access denied",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_deck", "Deck not found or access denied", null, 400);
     }
 
     // Create flashcard
@@ -136,12 +108,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   } catch (error) {
     console.error("Error creating flashcard:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to create flashcard",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to create flashcard", null, 500);
   }
 };
-

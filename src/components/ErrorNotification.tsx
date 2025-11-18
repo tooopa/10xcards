@@ -3,37 +3,42 @@ import { AlertCircle, RefreshCw, Wifi, Shield, AlertTriangle } from "lucide-reac
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
+interface ApiError {
+  status?: number;
+  code?: string;
+  name?: string;
+}
+
 interface ErrorNotificationProps {
   message: string;
-  error?: Error | { status?: number; code?: string };
+  error?: Error | ApiError;
   onRetry?: () => void;
   showRetry?: boolean;
 }
 
-export function ErrorNotification({
-  message,
-  error,
-  onRetry,
-  showRetry = false
-}: ErrorNotificationProps) {
+export function ErrorNotification({ message, error, onRetry, showRetry = false }: ErrorNotificationProps) {
   const [isRetrying, setIsRetrying] = useState(false);
 
   const getErrorIcon = () => {
     if (!error) return <AlertCircle className="h-4 w-4" />;
 
     // Check for specific error types
-    const errorStatus = (error as any).status;
-    const errorCode = (error as any).code || (error as any).name;
+    const isApiError = (err: Error | ApiError): err is ApiError => {
+      return "status" in err || "code" in err || "name" in err;
+    };
 
-    if (errorStatus === 401 || errorStatus === 403 || errorCode === 'auth_error') {
+    const errorStatus = isApiError(error) ? error.status : undefined;
+    const errorCode = isApiError(error) ? error.code || error.name : error.name;
+
+    if (errorStatus === 401 || errorStatus === 403 || errorCode === "auth_error") {
       return <Shield className="h-4 w-4" />;
     }
 
-    if (errorStatus === 429 || errorCode === 'rate_limit') {
+    if (errorStatus === 429 || errorCode === "rate_limit") {
       return <AlertTriangle className="h-4 w-4" />;
     }
 
-    if (errorStatus >= 500 || errorCode === 'network_error' || errorCode === 'timeout') {
+    if (errorStatus >= 500 || errorCode === "network_error" || errorCode === "timeout") {
       return <Wifi className="h-4 w-4" />;
     }
 
@@ -43,8 +48,12 @@ export function ErrorNotification({
   const getErrorTitle = () => {
     if (!error) return "Error";
 
-    const errorStatus = (error as any).status;
-    const errorCode = (error as any).code || (error as any).name;
+    const isApiError = (err: Error | ApiError): err is ApiError => {
+      return "status" in err || "code" in err || "name" in err;
+    };
+
+    const errorStatus = isApiError(error) ? error.status : undefined;
+    const errorCode = isApiError(error) ? error.code || error.name : error.name;
 
     if (errorStatus === 400) return "Invalid Request";
     if (errorStatus === 401) return "Authentication Required";
@@ -54,9 +63,9 @@ export function ErrorNotification({
     if (errorStatus === 429) return "Too Many Requests";
     if (errorStatus >= 500) return "Server Error";
 
-    if (errorCode === 'network_error') return "Connection Error";
-    if (errorCode === 'timeout') return "Request Timeout";
-    if (errorCode === 'auth_error') return "Authentication Error";
+    if (errorCode === "network_error") return "Connection Error";
+    if (errorCode === "timeout") return "Request Timeout";
+    if (errorCode === "auth_error") return "Authentication Error";
 
     return "Error";
   };
@@ -64,7 +73,11 @@ export function ErrorNotification({
   const getErrorVariant = () => {
     if (!error) return "destructive";
 
-    const errorStatus = (error as any).status;
+    const isApiError = (err: Error | ApiError): err is ApiError => {
+      return "status" in err || "code" in err || "name" in err;
+    };
+
+    const errorStatus = isApiError(error) ? error.status : undefined;
 
     if (errorStatus === 401 || errorStatus === 403) return "destructive";
     if (errorStatus === 429 || errorStatus >= 500) return "default"; // Less alarming for temporary issues
@@ -75,7 +88,11 @@ export function ErrorNotification({
   const getRetryText = () => {
     if (!error) return "Try Again";
 
-    const errorStatus = (error as any).status;
+    const isApiError = (err: Error | ApiError): err is ApiError => {
+      return "status" in err || "code" in err || "name" in err;
+    };
+
+    const errorStatus = isApiError(error) ? error.status : undefined;
 
     if (errorStatus === 429) return "Retry Later";
     if (errorStatus >= 500) return "Retry";
@@ -95,7 +112,17 @@ export function ErrorNotification({
     }
   };
 
-  const shouldShowRetry = showRetry || (error && (error as any).status === 429) || (error && (error as any).status >= 500);
+  const shouldShowRetry = (() => {
+    if (showRetry) return true;
+    if (!error) return false;
+
+    const isApiError = (err: Error | ApiError): err is ApiError => {
+      return "status" in err || "code" in err || "name" in err;
+    };
+
+    const errorStatus = isApiError(error) ? error.status : undefined;
+    return errorStatus === 429 || (errorStatus !== undefined && errorStatus >= 500);
+  })();
 
   return (
     <Alert variant={getErrorVariant()}>
@@ -104,14 +131,8 @@ export function ErrorNotification({
         <div className="font-medium">{getErrorTitle()}</div>
         <AlertDescription className="mt-1">{message}</AlertDescription>
         {shouldShowRetry && onRetry && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRetry}
-            disabled={isRetrying}
-            className="mt-2 h-8"
-          >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={handleRetry} disabled={isRetrying} className="mt-2 h-8">
+            <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? "animate-spin" : ""}`} />
             {isRetrying ? "Retrying..." : getRetryText()}
           </Button>
         )}

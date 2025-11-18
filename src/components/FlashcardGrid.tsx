@@ -31,18 +31,16 @@ function FlashcardCard({ flashcard, deckId }: FlashcardCardProps) {
       className="block p-4 bg-card border border-border rounded-lg hover:shadow-lg transition-all duration-200 hover:border-primary/20"
     >
       <div className="mb-3">
-        <div className="text-sm font-medium text-card-foreground line-clamp-2 mb-1">
-          {flashcard.front}
-        </div>
-        <div className="text-xs text-muted-foreground line-clamp-2">
-          {flashcard.back}
-        </div>
+        <div className="text-sm font-medium text-card-foreground line-clamp-2 mb-1">{flashcard.front}</div>
+        <div className="text-xs text-muted-foreground line-clamp-2">{flashcard.back}</div>
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="capitalize">{flashcard.source.replace('-', ' ')}</span>
+        <span className="capitalize">{flashcard.source.replace("-", " ")}</span>
         {flashcard.tags.length > 0 && (
-          <span>{flashcard.tags.length} tag{flashcard.tags.length !== 1 ? 's' : ''}</span>
+          <span>
+            {flashcard.tags.length} tag{flashcard.tags.length !== 1 ? "s" : ""}
+          </span>
         )}
       </div>
     </a>

@@ -18,14 +18,11 @@ export const GenerationListQuerySchema = z.object({
  * Validation schema for OpenRouter model selection
  * Uses whitelist from ai.config.ts
  */
-export const OpenRouterModelSchema = z.enum(
-  getAllowedModelIds() as [string, ...string[]],
-  {
-    errorMap: () => ({ 
-      message: `Invalid model. Allowed models: ${getAllowedModelIds().join(", ")}` 
-    })
-  }
-);
+export const OpenRouterModelSchema = z.enum(getAllowedModelIds() as [string, ...string[]], {
+  errorMap: () => ({
+    message: `Invalid model. Allowed models: ${getAllowedModelIds().join(", ")}`,
+  }),
+});
 
 /**
  * Validation schema for POST /api/v1/generations/generate request body
@@ -33,9 +30,15 @@ export const OpenRouterModelSchema = z.enum(
 export const GenerateFlashcardsSchema = z.object({
   source_text: z
     .string()
-    .min(SOURCE_TEXT_CONSTRAINTS.MIN_LENGTH, `Source text must be at least ${SOURCE_TEXT_CONSTRAINTS.MIN_LENGTH} characters`)
-    .max(SOURCE_TEXT_CONSTRAINTS.MAX_LENGTH, `Source text must not exceed ${SOURCE_TEXT_CONSTRAINTS.MAX_LENGTH} characters`)
-    .transform(text => text.trim()),
+    .min(
+      SOURCE_TEXT_CONSTRAINTS.MIN_LENGTH,
+      `Source text must be at least ${SOURCE_TEXT_CONSTRAINTS.MIN_LENGTH} characters`
+    )
+    .max(
+      SOURCE_TEXT_CONSTRAINTS.MAX_LENGTH,
+      `Source text must not exceed ${SOURCE_TEXT_CONSTRAINTS.MAX_LENGTH} characters`
+    )
+    .transform((text) => text.trim()),
   model: OpenRouterModelSchema,
   deck_id: z.string().min(1, "Deck ID is required"),
 });
@@ -47,13 +50,19 @@ const FlashcardSuggestionSchema = z.object({
   front: z
     .string()
     .min(1, "Front text cannot be empty")
-    .max(GENERATION_CONSTRAINTS.MAX_FRONT_LENGTH, `Front text must not exceed ${GENERATION_CONSTRAINTS.MAX_FRONT_LENGTH} characters`)
-    .transform(text => text.trim()),
+    .max(
+      GENERATION_CONSTRAINTS.MAX_FRONT_LENGTH,
+      `Front text must not exceed ${GENERATION_CONSTRAINTS.MAX_FRONT_LENGTH} characters`
+    )
+    .transform((text) => text.trim()),
   back: z
     .string()
     .min(1, "Back text cannot be empty")
-    .max(GENERATION_CONSTRAINTS.MAX_BACK_LENGTH, `Back text must not exceed ${GENERATION_CONSTRAINTS.MAX_BACK_LENGTH} characters`)
-    .transform(text => text.trim()),
+    .max(
+      GENERATION_CONSTRAINTS.MAX_BACK_LENGTH,
+      `Back text must not exceed ${GENERATION_CONSTRAINTS.MAX_BACK_LENGTH} characters`
+    )
+    .transform((text) => text.trim()),
 });
 
 /**
@@ -70,14 +79,8 @@ const AIResponseSchema = z.object({
  * Validation schema for a single flashcard in accept request
  */
 const AcceptFlashcardInputSchema = z.object({
-  front: z
-    .string()
-    .min(1, "Front text cannot be empty")
-    .max(GENERATION_CONSTRAINTS.MAX_FRONT_LENGTH),
-  back: z
-    .string()
-    .min(1, "Back text cannot be empty")
-    .max(GENERATION_CONSTRAINTS.MAX_BACK_LENGTH),
+  front: z.string().min(1, "Front text cannot be empty").max(GENERATION_CONSTRAINTS.MAX_FRONT_LENGTH),
+  back: z.string().min(1, "Back text cannot be empty").max(GENERATION_CONSTRAINTS.MAX_BACK_LENGTH),
   edited: z.boolean(),
 });
 
@@ -94,22 +97,19 @@ export const AcceptGenerationSchema = z.object({
 /**
  * Helper function to calculate SHA-256 hash of source text
  * Used for deduplication of generation requests
- * 
+ *
  * @param text - Source text to hash
  * @returns SHA-256 hash as hexadecimal string
  */
 export function hashSourceText(text: string): string {
   const trimmedText = text.trim();
-  return crypto
-    .createHash("sha256")
-    .update(trimmedText)
-    .digest("hex");
+  return crypto.createHash("sha256").update(trimmedText).digest("hex");
 }
 
 /**
  * Validates and parses AI response containing flashcard suggestions
  * Throws error if validation fails
- * 
+ *
  * @param response - Raw response from AI (expected to be JSON string or object)
  * @returns Validated array of flashcard suggestions
  * @throws Error if response format is invalid
@@ -118,18 +118,16 @@ export function validateAISuggestions(response: unknown): GenerationSuggestionDt
   try {
     // If response is a string, parse it as JSON
     const data = typeof response === "string" ? JSON.parse(response) : response;
-    
+
     // Validate structure using Zod
     const validationResult = AIResponseSchema.safeParse(data);
-    
+
     if (!validationResult.success) {
-      throw new Error(
-        `Invalid AI response format: ${validationResult.error.errors.map(e => e.message).join(", ")}`
-      );
+      throw new Error(`Invalid AI response format: ${validationResult.error.errors.map((e) => e.message).join(", ")}`);
     }
-    
+
     // Transform to GenerationSuggestionDto format
-    return validationResult.data.flashcards.map(card => ({
+    return validationResult.data.flashcards.map((card) => ({
       front: card.front,
       back: card.back,
     }));
@@ -159,8 +157,5 @@ export class ValidationError extends Error {
  * Helper to format Zod validation errors for API responses
  */
 export function formatZodError(error: z.ZodError): string {
-  return error.errors
-    .map(err => `${err.path.join(".")}: ${err.message}`)
-    .join("; ");
+  return error.errors.map((err) => `${err.path.join(".")}: ${err.message}`).join("; ");
 }
-

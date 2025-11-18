@@ -117,9 +117,7 @@ export function EditFlashcardForm({ flashcard, onSuccess }: EditFlashcardFormPro
       <div className="text-sm text-muted-foreground mb-4">
         <strong>Current source:</strong> {flashcard.source}
         {flashcard.source === "ai-full" && (
-          <div className="text-warning mt-1">
-            ⚠️ Editing will change source to "ai-edited"
-          </div>
+          <div className="text-warning mt-1">⚠️ Editing will change source to "ai-edited"</div>
         )}
       </div>
 
@@ -143,12 +141,8 @@ export function EditFlashcardForm({ flashcard, onSuccess }: EditFlashcardFormPro
           rows={3}
           disabled={isLoading}
         />
-        {errors.front && (
-          <p className="text-sm text-destructive mt-1">{errors.front}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {front.length}/200 characters
-        </p>
+        {errors.front && <p className="text-sm text-destructive mt-1">{errors.front}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{front.length}/200 characters</p>
       </div>
 
       <div>
@@ -171,12 +165,8 @@ export function EditFlashcardForm({ flashcard, onSuccess }: EditFlashcardFormPro
           rows={4}
           disabled={isLoading}
         />
-        {errors.back && (
-          <p className="text-sm text-destructive mt-1">{errors.back}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {back.length}/500 characters
-        </p>
+        {errors.back && <p className="text-sm text-destructive mt-1">{errors.back}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{back.length}/500 characters</p>
       </div>
 
       <div className="flex gap-3 pt-4">

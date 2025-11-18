@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/generations/:id
- * 
+ *
  * Gets details of a single generation
  */
 
@@ -26,30 +26,17 @@ export const GET: APIRoute = async ({ params, locals }) => {
     // Validate generation ID
     const generationId = params.id;
     if (!generationId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Generation ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Generation ID is required", null, 400);
     }
 
     // Validate ID format (must be numeric)
     if (!/^\d+$/.test(generationId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Generation ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Generation ID must be a valid number", null, 400);
     }
 
     // Get generation from service
     const generationService = new GenerationService(locals.supabase);
-    const generation = await generationService.getGeneration(
-      userId,
-      generationId
-    );
+    const generation = await generationService.getGeneration(userId, generationId);
 
     // Check if generation exists and belongs to user
     if (!generation) {
@@ -60,12 +47,6 @@ export const GET: APIRoute = async ({ params, locals }) => {
   } catch (error) {
     console.error("Error getting generation:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to get generation",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to get generation", null, 500);
   }
 };
-

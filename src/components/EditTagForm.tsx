@@ -93,7 +93,11 @@ export function EditTagForm({ tag, onSuccess }: EditTagFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete the tag "${tag.name}"? This will remove it from all associated flashcards.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete the tag "${tag.name}"? This will remove it from all associated flashcards.`
+      )
+    ) {
       return;
     }
 
@@ -145,16 +149,12 @@ export function EditTagForm({ tag, onSuccess }: EditTagFormProps) {
           placeholder="Enter tag name"
           disabled={isLoading}
         />
-        {errors.name && (
-          <p className="text-sm text-destructive mt-1">{errors.name}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {name.length}/50 characters
-        </p>
+        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{name.length}/50 characters</p>
       </div>
 
       <div className="text-sm text-muted-foreground bg-secondary/20 p-3 rounded-lg">
-        <strong>Usage:</strong> This tag is used in {tag.usage_count} flashcard{tag.usage_count !== 1 ? 's' : ''}.
+        <strong>Usage:</strong> This tag is used in {tag.usage_count} flashcard{tag.usage_count !== 1 ? "s" : ""}.
       </div>
 
       <div className="flex gap-3 pt-4">

@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/generations
- * 
+ *
  * Lists generations with pagination and optional filtering
  */
 
@@ -42,10 +42,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     // Query generations using service
     const generationService = new GenerationService(locals.supabase);
-    const result = await generationService.listGenerations(
-      userId,
-      validationResult.data
-    );
+    const result = await generationService.listGenerations(userId, validationResult.data);
 
     // Format response
     const response: GenerationListResponseDto = {
@@ -57,12 +54,6 @@ export const GET: APIRoute = async ({ url, locals }) => {
   } catch (error) {
     console.error("Error listing generations:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to list generations",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to list generations", null, 500);
   }
 };
-

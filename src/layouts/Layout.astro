@@ -1,14 +1,13 @@
 ---
 import "../styles/global.css";
-import { Toaster } from "@/components/ui/sonner";
-import { AppProvider } from "@/contexts/AppContext";
-import { Navigation } from "@/components/Navigation";
+import { AppLayout } from "@/components/AppLayout.tsx";
 
 interface Props {
   title?: string;
+  description?: string;
 }
 
-const { title = "10xCards" } = Astro.props;
+const { title = "10xCards", description } = Astro.props as Props;
 ---
 
 <!doctype html>
@@ -18,14 +17,14 @@ const { title = "10xCards" } = Astro.props;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
+    {description && <meta name="description" content={description} />}
+    <slot name="head" />
     <title>{title}</title>
   </head>
   <body>
-    <AppProvider client:load>
-      <Navigation client:load />
+    <AppLayout client:load>
       <slot />
-    </AppProvider>
-    <Toaster richColors closeButton client:only="react" />
+    </AppLayout>
   </body>
 </html>
 

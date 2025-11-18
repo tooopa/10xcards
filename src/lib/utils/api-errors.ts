@@ -1,6 +1,6 @@
 /**
  * API Error Handling Utilities
- * 
+ *
  * Common error handling and response formatting for API endpoints.
  */
 
@@ -14,7 +14,7 @@ export function createErrorResponse(
   code: string,
   message: string,
   details?: Record<string, unknown> | null,
-  status: number = 500
+  status = 500
 ): Response {
   const errorResponse: ErrorResponse = {
     error: {
@@ -39,7 +39,7 @@ export function formatValidationError(error: z.ZodError): ErrorResponse {
       code: "validation_error",
       message: "Request validation failed",
       details: {
-        errors: error.errors.map(err => ({
+        errors: error.errors.map((err) => ({
           path: err.path.join("."),
           message: err.message,
           code: err.code,
@@ -62,11 +62,7 @@ export function createValidationErrorResponse(error: z.ZodError): Response {
 /**
  * Creates success response
  */
-export function createSuccessResponse(
-  data: unknown,
-  status: number = 200,
-  headers?: Record<string, string>
-): Response {
+export function createSuccessResponse(data: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -80,24 +76,14 @@ export function createSuccessResponse(
  * Creates unauthorized response
  */
 export function createUnauthorizedResponse(message?: string): Response {
-  return createErrorResponse(
-    "unauthorized",
-    message ?? "Authentication required",
-    null,
-    401
-  );
+  return createErrorResponse("unauthorized", message ?? "Authentication required", null, 401);
 }
 
 /**
  * Creates not found response
  */
 export function createNotFoundResponse(resource: string): Response {
-  return createErrorResponse(
-    "not_found",
-    `${resource} not found`,
-    null,
-    404
-  );
+  return createErrorResponse("not_found", `${resource} not found`, null, 404);
 }
 
 /**
@@ -195,11 +181,7 @@ export function isUniqueViolation(error: unknown): boolean {
 /**
  * Creates a conflict response for duplicate resources
  */
-export function createConflictResponse(
-  resource: string,
-  field: string,
-  value: string
-): Response {
+export function createConflictResponse(resource: string, field: string, value: string): Response {
   return createErrorResponse(
     "conflict",
     `A ${resource} with this ${field} already exists`,
@@ -215,10 +197,7 @@ export function createConflictResponse(
 /**
  * Creates a conflict response for duplicate tag in a specific deck
  */
-export function createTagConflictResponse(
-  tagName: string,
-  deckId: string
-): Response {
+export function createTagConflictResponse(tagName: string, deckId: string): Response {
   return createErrorResponse(
     "conflict",
     "Tag with this name already exists in deck",
@@ -251,4 +230,3 @@ export function getUserIdFromLocals(locals: App.Locals): string {
   }
   return session.user.id;
 }
-

@@ -1,6 +1,6 @@
 /**
  * Deck Service
- * 
+ *
  * Business logic for deck operations including CRUD operations,
  * flashcard counting, and complex deck deletion with migration.
  */
@@ -12,29 +12,14 @@ import type {
   CreateDeckCommand,
   UpdateDeckCommand,
   DeckDeletionResultDto,
-  PaginationMeta,
 } from "../../../types";
 import { DuplicateDeckError, DefaultDeckError, isUniqueViolation } from "../../utils/api-errors";
 import { sanitizeDeckName } from "../../validation/decks";
 
-/**
- * Internal type for deck with flashcard count from database
- */
-interface DeckWithCount {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string | null;
-  visibility: string;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-  flashcard_count: number;
-}
 
 /**
  * Lists all decks for a user with filtering, sorting, and pagination
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to fetch decks for
  * @param filters - Query filters (search, sort, order, page, limit)
@@ -45,23 +30,13 @@ export async function listDecks(
   userId: string,
   filters: DeckListQuery
 ): Promise<{ data: DeckDto[]; count: number }> {
-  const {
-    sort = "created_at",
-    order = "desc",
-    search,
-    page = 1,
-    limit = 20,
-  } = filters;
+  const { sort = "created_at", order = "desc", search, page = 1, limit = 20 } = filters;
 
   // Calculate pagination offset
   const offset = (page - 1) * limit;
 
   // Build base query
-  let query = supabase
-    .from("decks")
-    .select("*", { count: "exact" })
-    .eq("user_id", userId)
-    .is("deleted_at", null);
+  let query = supabase.from("decks").select("*", { count: "exact" }).eq("user_id", userId).is("deleted_at", null);
 
   // Apply search filter if provided
   if (search && search.length > 0) {
@@ -83,11 +58,11 @@ export async function listDecks(
   }
 
   // Get flashcard counts for each deck
-  const deckIds = decks?.map(d => d.id) || [];
+  const deckIds = decks?.map((d) => d.id) || [];
   const flashcardCounts = await getFlashcardCounts(supabase, deckIds);
 
   // Map to DTOs with flashcard counts
-  const deckDtos: DeckDto[] = (decks || []).map(deck => ({
+  const deckDtos: DeckDto[] = (decks || []).map((deck) => ({
     id: deck.id.toString(),
     user_id: deck.user_id,
     name: deck.name,
@@ -107,15 +82,12 @@ export async function listDecks(
 
 /**
  * Gets flashcard counts for multiple decks
- * 
+ *
  * @param supabase - Supabase client instance
  * @param deckIds - Array of deck IDs
  * @returns Map of deck ID to flashcard count
  */
-async function getFlashcardCounts(
-  supabase: SupabaseClient,
-  deckIds: number[]
-): Promise<Map<string, number>> {
+async function getFlashcardCounts(supabase: SupabaseClient, deckIds: number[]): Promise<Map<string, number>> {
   if (deckIds.length === 0) {
     return new Map();
   }
@@ -143,17 +115,13 @@ async function getFlashcardCounts(
 
 /**
  * Gets a single deck by ID
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID for ownership verification
  * @param deckId - Deck ID to retrieve
  * @returns Deck DTO or null if not found
  */
-export async function getDeck(
-  supabase: SupabaseClient,
-  userId: string,
-  deckId: string
-): Promise<DeckDto | null> {
+export async function getDeck(supabase: SupabaseClient, userId: string, deckId: string): Promise<DeckDto | null> {
   const { data: deck, error } = await supabase
     .from("decks")
     .select("*")
@@ -190,10 +158,7 @@ export async function getDeck(
 /**
  * Gets flashcard count for a single deck
  */
-async function getSingleDeckFlashcardCount(
-  supabase: SupabaseClient,
-  deckId: number
-): Promise<number> {
+async function getSingleDeckFlashcardCount(supabase: SupabaseClient, deckId: number): Promise<number> {
   const { count, error } = await supabase
     .from("flashcards")
     .select("*", { count: "exact", head: true })
@@ -210,15 +175,12 @@ async function getSingleDeckFlashcardCount(
 
 /**
  * Gets the default deck for a user
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to get default deck for
  * @returns Default deck DTO or null if not found
  */
-export async function getDefaultDeck(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<DeckDto | null> {
+export async function getDefaultDeck(supabase: SupabaseClient, userId: string): Promise<DeckDto | null> {
   const { data: deck, error } = await supabase
     .from("decks")
     .select("*")
@@ -254,7 +216,7 @@ export async function getDefaultDeck(
 
 /**
  * Creates a new deck
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID creating the deck
  * @param command - Deck creation data
@@ -309,7 +271,7 @@ export async function createDeck(
 
 /**
  * Updates an existing deck
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID for ownership verification
  * @param deckId - Deck ID to update
@@ -378,17 +340,13 @@ export async function updateDeck(
 
 /**
  * Verifies that a deck exists and belongs to the specified user
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check ownership against
  * @param deckId - Deck ID to verify
  * @returns true if deck exists and belongs to user, false otherwise
  */
-export async function verifyDeckOwnership(
-  supabase: SupabaseClient,
-  userId: string,
-  deckId: string
-): Promise<boolean> {
+export async function verifyDeckOwnership(supabase: SupabaseClient, userId: string, deckId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
       .from("decks")
@@ -412,7 +370,7 @@ export async function verifyDeckOwnership(
 
 /**
  * Deletes a deck and migrates its flashcards to the default deck
- * 
+ *
  * This is a complex transaction with 9 steps:
  * 1. Verify deck exists and is not default
  * 2. Get default deck ID
@@ -423,7 +381,7 @@ export async function verifyDeckOwnership(
  * 7. Soft-delete deck
  * 8. Commit transaction
  * 9. Return migration result
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID for ownership verification
  * @param deckId - Deck ID to delete
@@ -542,17 +500,15 @@ export async function deleteDeck(
 
         if (!flashcardsError && flashcards && flashcards.length > 0) {
           // Bulk insert flashcard-tag associations
-          const tagAssociations = flashcards.map(fc => ({
+          const tagAssociations = flashcards.map((fc) => ({
             flashcard_id: fc.id,
             tag_id: parseInt(migrationTag!.id),
           }));
 
-          const { error: tagAssocError } = await supabase
-            .from("flashcard_tags")
-            .upsert(tagAssociations, {
-              onConflict: "flashcard_id,tag_id",
-              ignoreDuplicates: true,
-            });
+          const { error: tagAssocError } = await supabase.from("flashcard_tags").upsert(tagAssociations, {
+            onConflict: "flashcard_id,tag_id",
+            ignoreDuplicates: true,
+          });
 
           if (tagAssocError) {
             console.warn("Warning: Failed to associate tags:", tagAssocError);
@@ -591,4 +547,3 @@ export async function deleteDeck(
     throw error;
   }
 }
-

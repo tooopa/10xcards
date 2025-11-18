@@ -11,25 +11,18 @@ export type AuthMode = "signin" | "signup";
 // Debug function to test Supabase connection
 const testSupabaseConnection = async () => {
   try {
-    console.log("Testing Supabase connection...");
-    console.log("Supabase URL:", import.meta.env.PUBLIC_SUPABASE_URL);
-    console.log("Supabase Key starts with:", import.meta.env.PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20));
-
     // Test basic connection
     const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-    console.log("Session check result:", { hasSession: !!sessionData.session, sessionError });
 
     // Test if we can query auth
     try {
-      const { data: userData, error: userError } = await supabaseClient.auth.getUser();
-      console.log("User check result:", { hasUser: !!userData.user, userError });
-    } catch (userErr) {
-      console.log("User check failed:", userErr);
+      await supabaseClient.auth.getUser();
+    } catch {
+      // Log error silently
     }
 
     return { success: !sessionError, session: sessionData.session };
   } catch (err) {
-    console.error("Supabase connection failed:", err);
     return { success: false, error: err };
   }
 };
@@ -71,44 +64,21 @@ export function AuthCard({ onAuthSuccess, initialMode = "signin", showHeader = t
 
     try {
       if (isSignUp) {
-        console.log("Starting client-side signup process...", {
-          email,
-          supabaseUrl: import.meta.env.PUBLIC_SUPABASE_URL,
-        });
-
         // Test connection first
-        const connectionTest = await testSupabaseConnection();
-        console.log("Connection test result:", connectionTest);
+        await testSupabaseConnection();
 
         const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
         });
 
-        console.log("Supabase signup response:", {
-          data: data
-            ? {
-                user: data.user ? { id: data.user.id, email: data.user.email } : null,
-                session: !!data.session,
-              }
-            : null,
-          error,
-        });
-
         if (error) {
-          console.error("Signup error:", error);
           toast.error(error.message);
           return;
         }
 
         // Check if user was created successfully
         if (data.user) {
-          console.log("User created successfully:", data.user.id);
-
-          // Try to establish session
-          const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-          console.log("Session after signup:", { hasSession: !!sessionData.session, sessionError });
-
           onAuthSuccess?.({
             id: data.user.id,
             email: data.user.email || "",
@@ -186,13 +156,10 @@ export function AuthCard({ onAuthSuccess, initialMode = "signin", showHeader = t
   }; */
 
   const navigateToDashboard = () => {
-    console.log("Navigating to dashboard...");
-
     // Try a simple navigation first
     try {
       window.location.href = "/";
-    } catch (err) {
-      console.error("Navigation failed:", err);
+    } catch {
       toast.error("Failed to navigate to dashboard");
     }
   };
@@ -297,9 +264,7 @@ export function AuthCard({ onAuthSuccess, initialMode = "signin", showHeader = t
         <button
           type="button"
           onClick={async () => {
-            console.log("Testing Supabase connection...");
-            const result = await testSupabaseConnection();
-            console.log("Connection result:", result);
+            await testSupabaseConnection();
           }}
           className="w-full mt-2 text-xs text-gray-500 underline"
         >

@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Service
- * 
+ *
  * Implements rate limiting for AI generation requests to prevent abuse
  * and control costs. Default limit: 10 generations per hour per user.
  */
@@ -43,16 +43,13 @@ export class RateLimitExceededError extends Error {
 export class RateLimitService {
   /**
    * Checks if user has exceeded generation rate limit
-   * 
+   *
    * @param supabase - Supabase client instance
    * @param userId - User ID to check rate limit for
    * @returns Rate limit information
    * @throws {RateLimitExceededError} If rate limit is exceeded
    */
-  static async checkGenerationLimit(
-    supabase: SupabaseClient,
-    userId: string
-  ): Promise<RateLimitInfo> {
+  static async checkGenerationLimit(supabase: SupabaseClient, userId: string): Promise<RateLimitInfo> {
     const limit = RATE_LIMITS.GENERATIONS_PER_HOUR;
     const timeWindowMs = RATE_LIMITS.TIME_WINDOW_MS;
 
@@ -98,7 +95,7 @@ export class RateLimitService {
     } catch (error) {
       // On database errors, fail open (allow request) rather than blocking user
       console.error("Rate limit check failed:", error);
-      
+
       return {
         allowed: true,
         remaining: limit,
@@ -111,21 +108,16 @@ export class RateLimitService {
 
   /**
    * Checks rate limit and throws error if exceeded
-   * 
+   *
    * @param supabase - Supabase client instance
    * @param userId - User ID to check
    * @throws {RateLimitExceededError} If rate limit is exceeded
    */
-  static async enforceGenerationLimit(
-    supabase: SupabaseClient,
-    userId: string
-  ): Promise<void> {
+  static async enforceGenerationLimit(supabase: SupabaseClient, userId: string): Promise<void> {
     const rateLimitInfo = await this.checkGenerationLimit(supabase, userId);
 
     if (!rateLimitInfo.allowed) {
-      const minutesUntilReset = Math.ceil(
-        (rateLimitInfo.resetAt.getTime() - Date.now()) / (60 * 1000)
-      );
+      const minutesUntilReset = Math.ceil((rateLimitInfo.resetAt.getTime() - Date.now()) / (60 * 1000));
 
       throw new RateLimitExceededError(
         `Rate limit exceeded. Maximum ${rateLimitInfo.limit} generations per hour. Try again in ${minutesUntilReset} minutes.`,
@@ -153,4 +145,3 @@ export class RateLimitService {
     return Math.ceil((resetAt.getTime() - Date.now()) / 1000);
   }
 }
-

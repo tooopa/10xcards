@@ -76,7 +76,7 @@ export function CreateFlashcardForm({ deckId, onSuccess }: CreateFlashcardFormPr
         throw new Error(errorData.error?.message || "Failed to create flashcard");
       }
 
-      const newFlashcard = await response.json();
+      await response.json();
       toast.success("Flashcard created successfully!");
 
       // Reset form
@@ -116,12 +116,8 @@ export function CreateFlashcardForm({ deckId, onSuccess }: CreateFlashcardFormPr
           disabled={isLoading}
           required
         />
-        {errors.front && (
-          <p className="text-sm text-destructive mt-1">{errors.front}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {front.length}/200 characters
-        </p>
+        {errors.front && <p className="text-sm text-destructive mt-1">{errors.front}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{front.length}/200 characters</p>
       </div>
 
       <div>
@@ -145,12 +141,8 @@ export function CreateFlashcardForm({ deckId, onSuccess }: CreateFlashcardFormPr
           disabled={isLoading}
           required
         />
-        {errors.back && (
-          <p className="text-sm text-destructive mt-1">{errors.back}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {back.length}/500 characters
-        </p>
+        {errors.back && <p className="text-sm text-destructive mt-1">{errors.back}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{back.length}/500 characters</p>
       </div>
 
       <div className="flex gap-3 pt-4">

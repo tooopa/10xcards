@@ -1,4 +1,5 @@
-import { createBrowserClient, createServerClient } from "@supabase/ssr";
+import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 
 import type { Database } from "./database.types.ts";
 
@@ -34,7 +35,7 @@ export const supabaseClient = createBrowserClient<Database>(supabaseUrl, supabas
  * - Admin operations that require bypassing RLS
  */
 export const supabaseAdmin = supabaseServiceRoleKey
-  ? createServerClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+  ? createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

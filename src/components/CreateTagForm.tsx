@@ -117,12 +117,8 @@ export function CreateTagForm({ decks, onSuccess }: CreateTagFormProps) {
           disabled={isLoading}
           required
         />
-        {errors.name && (
-          <p className="text-sm text-destructive mt-1">{errors.name}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {name.length}/50 characters
-        </p>
+        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{name.length}/50 characters</p>
       </div>
 
       <div>
@@ -151,9 +147,7 @@ export function CreateTagForm({ decks, onSuccess }: CreateTagFormProps) {
             </option>
           ))}
         </select>
-        {errors.deck && (
-          <p className="text-sm text-destructive mt-1">{errors.deck}</p>
-        )}
+        {errors.deck && <p className="text-sm text-destructive mt-1">{errors.deck}</p>}
       </div>
 
       <div className="text-sm text-muted-foreground bg-secondary/20 p-3 rounded-lg">

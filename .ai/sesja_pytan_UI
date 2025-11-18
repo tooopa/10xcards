@@ -1,0 +1,129 @@
+Pytania 1 rynda:
+<pytania 1 runda>
+Czy hierarchia widoków powinna odzwierciedlać strukturę API z osobnymi widokami dla talii, fiszek, tagów i generacji, czy lepiej zastosować zintegrowany dashboard z zakładkami?
+Rekomendacja: Tak, hierarchia widoków powinna odzwierciedlać strukturę API - dashboard główny z listą talii, widok szczegółów talii z fiszkami, osobny widok dla generowania AI i zarządzania tagami, aby zapewnić przejrzystość i zgodność z RESTful API.
+Czy przepływ użytkownika po rejestracji powinien prowadzić bezpośrednio do tworzenia pierwszej talii, czy do pustego dashboardu z przewodnikiem?
+Rekomendacja: Tak, po rejestracji użytkownik powinien trafić do pustego dashboardu z domyślną talią "Uncategorized" i krótkim przewodnikiem wprowadzającym, aby ułatwić onboardowanie bez obciążania użytkownika natychmiastowymi decyzjami.
+Czy responsywność powinna priorytetowo obsługiwać urządzenia mobilne (smartfony), czy desktop jako główną platformę nauki?
+Rekomendacja: Tak, responsywność powinna priorytetowo obsługiwać urządzenia mobilne, ponieważ studenci i uczniowie często uczą się w podróży, z minimalną szerokością 320px dla smartfonów i optymalizacją dla tabletów w orientacji poziomej.
+Czy dostępność powinna obejmować obsługę czytników ekranowych i nawigację klawiszową, biorąc pod uwagę edukacyjny charakter aplikacji?
+Rekomendacja: Tak, dostępność powinna obejmować pełne wsparcie dla czytników ekranowych (WCAG 2.1 AA), nawigację klawiszową dla wszystkich interakcji oraz wysokokontrastowy tryb dla użytkowników z wadami wzroku, ponieważ aplikacja edukacyjna musi być dostępna dla wszystkich studentów.
+Czy bezpieczeństwo UI powinno implementować dodatkową walidację po stronie klienta poza API, np. sprawdzanie siły hasła przy rejestracji?
+Rekomendacja: Tak, bezpieczeństwo UI powinno implementować walidację siły hasła, sanityzację wszystkich inputów oraz wyświetlanie błędów autoryzacji bez ujawniania czy zasób istnieje, aby zapewnić lepsze UX i dodatkową warstwę bezpieczeństwa przed wywołaniami API.
+Czy spójność designu powinna wykorzystywać system design tokens dla kolorów, typografii i odstępów, aby zapewnić jednolity wygląd w całym MVP?
+Rekomendacja: Tak, spójność designu powinna wykorzystywać design tokens w Tailwind CSS, zdefiniowane kolory dla stanów (primary, success, error), skalę typograficzną oraz systematyczne odstępy, aby stworzyć rozpoznawalną markę edukacyjną.
+Czy strategia zarządzania stanem powinna wykorzystywać React Context dla danych użytkownika i talii, z SWR dla cache'owania API calls?
+Rekomendacja: Tak, strategia zarządzania stanem powinna wykorzystywać React Context dla globalnego stanu (user, current deck), SWR dla automatycznego cache'owania i rewalidacji API calls, oraz useState dla lokalnych stanów komponentów, aby zoptymalizować wydajność i synchronizację z API.
+Czy obsługa błędów powinna wyświetlać kontekstowe komunikaty dla różnych typów błędów API (400, 401, 404, 429, 500) z możliwością retry?
+Rekomendacja: Tak, obsługa błędów powinna wyświetlać kontekstowe komunikaty toast/notification dla błędów API, z przyciskami retry dla błędów tymczasowych (429, 500), oraz automatycznym przekierowaniem do loginu przy 401, aby poprawić niezawodność aplikacji.
+Czy strategia buforowania powinna implementować service worker dla offline dostępu do ostatnio przeglądanych fiszek?
+Rekomendacja: Tak, strategia buforowania powinna implementować service worker dla cache'owania statycznych zasobów i ostatnio przeglądanych fiszek, z fallback do trybu offline informującego o konieczności połączenia dla nowych operacji, aby umożliwić naukę w ograniczonym zakresie bez internetu.
+Czy nawigacja powinna wykorzystywać routing zagnieżdżony (nested routes) w Astro dla płynnych przejść między taliami i fiszkami?
+Rekomendacja: Tak, nawigacja powinna wykorzystywać nested routes w Astro (/decks/:id/flashcards/:flashcardId), z breadcrumbs i przyciskami "wstecz" dla łatwej nawigacji, aby odzwierciedlić hierarchiczną strukturę danych z API.
+</pytania 1 runda>
+
+Odpowiedź developera: zgoda na rekomendacje dla 1,2,6,7,10 reszta na dalszym etapie teraz liczy się MVP
+
+Podsumowanie ukończonych zadań:
+<podsumowanie 1 runda>
+✅ Hierarchia widoków zgodna z API
+Dashboard (lista talii) na /
+Szczegóły talii na /decks/[id]
+Szczegóły fiszki na /decks/[id]/flashcards/[flashcardId]
+Generowanie AI na /generate
+✅ Dashboard po rejestracji z przewodnikiem
+Automatyczne wykrywanie nowych użytkowników
+Interaktywny przewodnik wprowadzający z krokami
+Skupia się na użytkownikach z tylko domyślną talią "Uncategorized"
+✅ System design tokens
+Rozszerzone kolory stanów (success, warning, info)
+Skala typograficzna (xs do 5xl)
+Systematyczne odstępy (space-1 do space-16)
+Wszystko w Tailwind CSS v4
+✅ Strategia zarządzania stanem
+React Context dla globalnego stanu (user/currentDeck)
+SWR dla automatycznego cache'owania API calls
+useState dla lokalnych stanów komponentów
+Custom hooks useApi dla typowych operacji
+✅ Nested routes z nawigacją
+Struktura /decks/:id/flashcards/:flashcardId
+Breadcrumbs na każdej stronie
+Przyciski "wstecz" dla intuicyjnej nawigacji
+✅ Podstawowe komponenty UI
+Layout z AppProvider i Navigation
+DeckList, FlashcardGrid, FlashcardDetail
+Navigation component z linkami
+Wszystkie używają Shadcn/ui
+Aplikacja ma teraz kompletną architekturę UI dla MVP, w pełni zintegrowaną z istniejącym API REST. Wszystkie komponenty są responsywne, dostępne i używają spójnego systemu design tokens.
+</podsumowanie 1 runda>
+
+Pytania 2 runda:
+<pytania 2 runda>
+Czy funkcjonalność logout w nawigacji powinna być zaimplementowana z pełną integracją Supabase Auth, włączając obsługę refresh tokens i przekierowanie do strony logowania?
+Rekomendacja: Tak, funkcjonalność logout powinna być zaimplementowana z wywołaniem Supabase Auth signOut(), czyszczeniem lokalnego stanu aplikacji oraz przekierowaniem do strony logowania lub dashboardu publicznego.
+Czy potrzebne jest UI do tworzenia nowych talii z formularzem zawierającym walidację nazwy i opisu, z natychmiastowym dodaniem do listy talii?
+Rekomendacja: Tak, należy dodać modal lub stronę do tworzenia nowych talii z formularzem zawierającym walidację unikalności nazwy w ramach użytkownika oraz opcjonalny opis, z natychmiastową aktualizacją listy talii po utworzeniu.
+Czy wymagane jest UI do ręcznego tworzenia pojedynczych fiszek z wyborem talii, walidacją długości tekstu i natychmiastowym dodaniem do kolekcji?
+Rekomendacja: Tak, należy stworzyć komponent do ręcznego tworzenia fiszek z wyborem talii z dropdown, polami front/back z walidacją długości (1-200/1-500 znaków) oraz natychmiastowym dodaniem do listy fiszek w wybranej talii.
+Czy funkcjonalność edycji fiszek powinna obejmować modal edycji z walidacją zmian, obsługą source tracking (manual → ai-edited) oraz natychmiastową aktualizacją w interfejsie?
+Rekomendacja: Tak, należy zaimplementować modal edycji fiszek z polami front/back, automatycznym ustawianiem source na "ai-edited" przy edycji fiszek AI oraz natychmiastową aktualizacją w interfejsie bez przeładowania strony.
+Czy zarządzanie tagami powinno obejmować stronę przeglądu wszystkich tagów, możliwość tworzenia nowych tagów deck-scoped oraz przypisywania/usuwania tagów do fiszek?
+Rekomendacja: Tak, należy stworzyć stronę /tags z listą wszystkich tagów (global + deck-scoped), formularzem tworzenia nowych tagów przypisanych do konkretnych talii oraz funkcjonalnością zarządzania tagami w kontekście fiszek.
+Czy obsługa błędów powinna być rozszerzona o kontekstowe komunikaty dla różnych kodów błędów API (400, 401, 403, 404, 409, 429) z opcjami retry dla błędów tymczasowych?
+Rekomendacja: Tak, należy rozszerzyć system błędów o specyficzne komunikaty dla różnych kodów błędów, toast notifications z opcjami retry dla błędów 429/500/502 oraz automatyczne przekierowania dla błędów autoryzacji.
+Czy responsywność mobilna powinna priorytetowo obsługiwać smartfony z optymalizacją nawigacji, formularzy i list dla ekranów o szerokości 320px+ oraz tabletów w orientacji poziomej?
+Rekomendacja: Tak, należy zoptymalizować wszystkie komponenty dla urządzeń mobilnych z hamburger menu dla nawigacji, stacked layout dla formularzy oraz dostosowaną siatką kart dla mniejszych ekranów.
+Czy paginacja powinna być zaimplementowana dla dużych list talii i fiszek z opcjami sortowania, filtrowania oraz wyszukiwania pełnotekstowego z debouncing?
+Rekomendacja: Tak, należy dodać paginację dla list dłuższych niż 20 elementów z kontrolami "poprzedni/następny", opcjami sortowania (created_at, updated_at, name) oraz polem wyszukiwania z debouncing dla natychmiastowych wyników.
+Czy potrzebne jest UI dla zaawansowanych filtrów i wyszukiwania z opcjami filtrowania po tagach, source (manual/ai-full/ai-edited), deck oraz zakresach dat?
+Rekomendacja: Tak, należy dodać zaawansowane filtry z multi-select dla tagów, radio buttons dla source, dropdown dla deck oraz date pickers dla zakresów dat, z możliwością zapisywania ulubionych kombinacji filtrów.
+Czy stan offline powinien obejmować cache'owanie ostatnio przeglądanych fiszek i talii w localStorage oraz informowanie użytkownika o konieczności połączenia dla nowych operacji?
+Rekomendacja: Tak, należy zaimplementować service worker dla cache'owania statycznych zasobów oraz localStorage dla ostatnio przeglądanych danych, z fallback UI informującym o trybie offline dla operacji wymagających API.
+</pytania>
+Odpowiedź developera: zgoda na rekomendacje 1-6 reszta na razie nie
+
+Podsumowanie zakończonej 2 rundy
+<podsumowanie 2 runda>
+Wszystkie 6 zaakceptowanych rekomendacji zostały pomyślnie zaimplementowane:
+✅ Funkcjonalność logout z Supabase Auth
+Pełna integracja z Supabase Auth (signOut, refresh tokens)
+Przekierowanie do strony logowania
+Czyszczenie stanu aplikacji i onboarding status
+Loading states i obsługa błędów
+✅ UI tworzenia nowych talii
+Modal z formularzem walidacji nazwy i opisu
+Walidacja unikalności nazwy w ramach użytkownika
+Natychmiastowa aktualizacja listy talii
+Responsywny design z Shadcn/ui
+✅ Ręczne tworzenie fiszek
+Modal z formularzem wyboru talii i pól front/back
+Walidacja długości tekstu (1-200/1-500 znaków)
+Automatyczne ustawienie source na "manual"
+Dropdown z dostępnymi taliami
+✅ Edycja fiszek z source tracking
+Modal edycji z polami front/back
+Automatyczne śledzenie source: "ai-full" → "ai-edited"
+Walidacja długości i unikalności
+Informacje dla użytkownika o zmianach source
+✅ Zarządzanie tagami
+Dedykowana strona /tags z pełną funkcjonalnością
+Lista wszystkich tagów (global + deck-scoped) z filtrami
+Tworzenie nowych tagów przypisanych do talii
+Edycja nazw tagów deck-scoped z walidacją
+Usuwanie tagów z potwierdzeniem
+Liczniki użycia tagów w fiszkach
+✅ Rozszerzona obsługa błędów
+Kontekstowe komunikaty dla różnych kodów błędów (400, 401, 403, 404, 409, 429, 500+)
+Specyficzne ikony dla typów błędów (Shield dla auth, Wifi dla sieciowych)
+Automatyczne przyciski retry dla błędów tymczasowych
+Różne poziomy severity w zależności od typu błędu
+Architektura UI MVP jest teraz kompletna! 🎉
+Aplikacja posiada pełną funkcjonalność MVP z:
+Kompletną nawigacją z breadcrumbs i przyciskami wstecz
+Zarządzaniem kontem z rejestracją/logowaniem/wylogowaniem
+Zarządzaniem taliami - tworzenie, przeglądanie, szczegółowe widoki
+Zarządzaniem fiszkami - ręczne tworzenie, edycja, generowanie AI, przeglądanie
+Systemem tagowania - tworzenie, zarządzanie, filtrowanie
+Solidną obsługą błędów z kontekstowymi komunikatami i retry
+Responsywnym designem z design tokens i spójnym UI
+</podsumowanie 2 runda>

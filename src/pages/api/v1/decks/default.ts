@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/decks/default - Get the user's default deck
- * 
+ *
  * Returns the deck with is_default=true for the authenticated user.
  * This deck should always exist (created by trigger on user registration).
  */
@@ -37,12 +37,6 @@ export const GET: APIRoute = async ({ locals }) => {
   } catch (error) {
     console.error("Error getting default deck:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to get default deck",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to get default deck", null, 500);
   }
 };
-

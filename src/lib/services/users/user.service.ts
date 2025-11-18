@@ -12,7 +12,10 @@ import type { SupabaseClient } from "../../../db/supabase.client";
  * Custom error for user deletion failures
  */
 export class UserDeletionError extends Error {
-  constructor(message: string, public readonly originalError?: unknown) {
+  constructor(
+    message: string,
+    public readonly originalError?: unknown
+  ) {
     super(message);
     this.name = "UserDeletionError";
   }
@@ -48,20 +51,14 @@ export class UserDeletionError extends Error {
  * }
  * ```
  */
-export async function deleteUser(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<void> {
+export async function deleteUser(supabase: SupabaseClient, userId: string): Promise<void> {
   try {
     // Delete user from auth.users using admin client
     // This requires service_role key which bypasses RLS
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
-      throw new UserDeletionError(
-        `Failed to delete user from auth: ${error.message}`,
-        error
-      );
+      throw new UserDeletionError(`Failed to delete user from auth: ${error.message}`, error);
     }
 
     // All user data is automatically deleted by ON DELETE CASCADE constraints:
@@ -78,10 +75,6 @@ export async function deleteUser(
     }
 
     // Wrap other errors
-    throw new UserDeletionError(
-      "An unexpected error occurred during user deletion",
-      error
-    );
+    throw new UserDeletionError("An unexpected error occurred during user deletion", error);
   }
 }
-

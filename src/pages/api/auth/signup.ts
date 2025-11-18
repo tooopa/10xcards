@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!email || !password) {
       return new Response(
         JSON.stringify({
-          error: { code: "validation_error", message: "Email and password are required" }
+          error: { code: "validation_error", message: "Email and password are required" },
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
       console.error("Server signup error:", error);
       return new Response(
         JSON.stringify({
-          error: { code: "signup_failed", message: error.message }
+          error: { code: "signup_failed", message: error.message },
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -72,7 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
     console.error("Unexpected server error:", err);
     return new Response(
       JSON.stringify({
-        error: { code: "internal_error", message: "Internal server error" }
+        error: { code: "internal_error", message: "Internal server error" },
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );

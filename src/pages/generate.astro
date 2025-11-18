@@ -1,23 +1,50 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import { FlashcardGenerationView } from "@/components/FlashcardGenerationView";
+// Generate AI Flashcards Page
+import { GeneratePage } from "../components/generate-ai/GeneratePage.tsx";
 
+// Get URL parameters for initial form values
 const url = new URL(Astro.request.url);
-const deckId = url.searchParams.get('deck');
+const initialDeckId = url.searchParams.get("deck_id") || undefined;
+const initialModel = url.searchParams.get("model") || undefined;
 ---
 
-<Layout title="Generate Flashcards - 10xCards">
-  <div class="container mx-auto px-4 py-8">
-    <div class="mb-8">
-      <nav class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <a href="/" class="hover:text-foreground transition-colors">Dashboard</a>
-        <span>/</span>
-        <span class="text-foreground">Generate AI Flashcards</span>
-      </nav>
-      <h1 class="text-4xl font-bold text-foreground mb-2">Generate AI Flashcards</h1>
-      <p class="text-muted-foreground">Paste your study material and let AI create flashcards for you</p>
-    </div>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
 
-    <FlashcardGenerationView deckId={deckId} client:load />
-  </div>
-</Layout>
+    <!-- SEO -->
+    <title>Generuj fiszki z AI - 10xCards</title>
+    <meta
+      name="description"
+      content="Automatycznie generuj wysokiej jakości fiszki z tekstu źródłowego przy użyciu sztucznej inteligencji. Szybkie tworzenie materiałów do nauki."
+    />
+    <meta name="keywords" content="fiszki, AI, generowanie, nauka, edukacja, flashcards" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Generuj fiszki z AI - 10xCards" />
+    <meta
+      property="og:description"
+      content="Automatycznie generuj wysokiej jakości fiszki z tekstu źródłowego przy użyciu sztucznej inteligencji."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:image" content="/og-generate.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Generuj fiszki z AI - 10xCards" />
+    <meta
+      name="twitter:description"
+      content="Automatycznie generuj wysokiej jakości fiszki z tekstu źródłowego przy użyciu sztucznej inteligencji."
+    />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={Astro.url} />
+  </head>
+  <body>
+    <GeneratePage initialDeckId={initialDeckId} initialModel={initialModel} client:load />
+  </body>
+</html>

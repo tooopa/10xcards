@@ -11,10 +11,7 @@ import {
   addFlashcardTags,
   getFlashcardTags,
 } from "../../../../../../lib/services/tags/tag.service";
-import {
-  FlashcardTagsSchema,
-  validateNumericId,
-} from "../../../../../../lib/validation/flashcards";
+import { FlashcardTagsSchema, validateNumericId } from "../../../../../../lib/validation/flashcards";
 import {
   createErrorResponse,
   createValidationErrorResponse,
@@ -38,21 +35,11 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     // Validate flashcard ID
     const flashcardId = params.id;
     if (!flashcardId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Flashcard ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Flashcard ID is required", null, 400);
     }
 
     if (!validateNumericId(flashcardId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Flashcard ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Flashcard ID must be a valid number", null, 400);
     }
 
     // Parse and validate request body
@@ -72,19 +59,10 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     }
 
     // Verify all tags are accessible to user
-    const tagsAccessible = await verifyTagsAccessible(
-      locals.supabase,
-      userId,
-      tag_ids
-    );
+    const tagsAccessible = await verifyTagsAccessible(locals.supabase, userId, tag_ids);
 
     if (!tagsAccessible) {
-      return createErrorResponse(
-        "invalid_tags",
-        "One or more tags not found or inaccessible",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_tags", "One or more tags not found or inaccessible", null, 400);
     }
 
     // Replace tags (transaction)
@@ -105,20 +83,10 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
 
     // Check for transaction errors
     if (error instanceof Error && error.message.includes("transaction")) {
-      return createErrorResponse(
-        "transaction_error",
-        "Failed to update tags",
-        null,
-        500
-      );
+      return createErrorResponse("transaction_error", "Failed to update tags", null, 500);
     }
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to replace tags",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to replace tags", null, 500);
   }
 };
 
@@ -134,21 +102,11 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     // Validate flashcard ID
     const flashcardId = params.id;
     if (!flashcardId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Flashcard ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Flashcard ID is required", null, 400);
     }
 
     if (!validateNumericId(flashcardId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Flashcard ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Flashcard ID must be a valid number", null, 400);
     }
 
     // Parse and validate request body
@@ -168,19 +126,10 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     }
 
     // Verify all tags are accessible to user
-    const tagsAccessible = await verifyTagsAccessible(
-      locals.supabase,
-      userId,
-      tag_ids
-    );
+    const tagsAccessible = await verifyTagsAccessible(locals.supabase, userId, tag_ids);
 
     if (!tagsAccessible) {
-      return createErrorResponse(
-        "invalid_tags",
-        "One or more tags not found or inaccessible",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_tags", "One or more tags not found or inaccessible", null, 400);
     }
 
     // Add tags (uses upsert to handle duplicates)
@@ -199,12 +148,6 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   } catch (error) {
     console.error("Error adding flashcard tags:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to add tags",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to add tags", null, 500);
   }
 };
-

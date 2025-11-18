@@ -1,6 +1,6 @@
 /**
  * Prompt engineering for flashcard generation
- * 
+ *
  * This module contains the system and user prompts used for generating
  * high-quality flashcards from source text using AI models.
  */
@@ -32,7 +32,7 @@ Return a JSON object with a "flashcards" array. Each flashcard must have:
 
 /**
  * Builds the user prompt with source text
- * 
+ *
  * @param sourceText - The text to generate flashcards from
  * @returns Formatted user prompt
  */
@@ -105,4 +105,3 @@ export const EXAMPLE_FLASHCARDS = [
     back: "In chloroplasts, specifically in the thylakoid membranes (light reactions) and stroma (Calvin cycle).",
   },
 ];
-

@@ -34,7 +34,9 @@ export function TagManagement() {
     return (
       <div className="space-y-4">
         {tagsError && <ErrorNotification message={tagsError.message} error={tagsError} onRetry={() => mutateTags()} />}
-        {decksError && <ErrorNotification message={decksError.message} error={decksError} onRetry={() => mutateDecks()} />}
+        {decksError && (
+          <ErrorNotification message={decksError.message} error={decksError} onRetry={() => mutateDecks()} />
+        )}
       </div>
     );
   }
@@ -104,13 +106,9 @@ export function TagManagement() {
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🏷️</div>
           <h3 className="text-xl font-semibold text-foreground mb-2">
-            {selectedScope === "all" ? "No tags yet" :
-             selectedScope === "global" ? "No global tags" :
-             "No deck tags"}
+            {selectedScope === "all" ? "No tags yet" : selectedScope === "global" ? "No global tags" : "No deck tags"}
           </h3>
-          <p className="text-muted-foreground mb-6">
-            Create your first tag to start organizing your flashcards
-          </p>
+          <p className="text-muted-foreground mb-6">Create your first tag to start organizing your flashcards</p>
         </div>
       ) : (
         <TagList tags={filteredTags} decks={decks} onTagUpdate={handleTagUpdate} />

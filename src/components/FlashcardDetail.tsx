@@ -31,10 +31,12 @@ export function FlashcardDetail({ deckId, flashcardId }: FlashcardDetailProps) {
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <a href="/" className="hover:text-foreground transition-colors">Dashboard</a>
+          <a href="/" className="hover:text-foreground transition-colors">
+            Dashboard
+          </a>
           <span>/</span>
           <a href={`/decks/${deckId}`} className="hover:text-foreground transition-colors">
-            {isLoading ? <SkeletonLoader className="h-4 w-20 inline-block" /> : deck?.name || 'Deck'}
+            {isLoading ? <SkeletonLoader className="h-4 w-20 inline-block" /> : deck?.name || "Deck"}
           </a>
           <span>/</span>
           <span className="text-foreground">Flashcard</span>
@@ -63,10 +65,10 @@ export function FlashcardDetail({ deckId, flashcardId }: FlashcardDetailProps) {
                 className="relative h-64 bg-card border border-border rounded-lg cursor-pointer transition-transform hover:scale-105"
                 onClick={() => setIsFlipped(!isFlipped)}
               >
-                <div className={`absolute inset-0 p-6 flex items-center justify-center text-center transition-transform duration-300 ${isFlipped ? 'rotate-y-180' : ''}`}>
-                  <div className="text-lg text-card-foreground">
-                    {isFlipped ? flashcard.back : flashcard.front}
-                  </div>
+                <div
+                  className={`absolute inset-0 p-6 flex items-center justify-center text-center transition-transform duration-300 ${isFlipped ? "rotate-y-180" : ""}`}
+                >
+                  <div className="text-lg text-card-foreground">{isFlipped ? flashcard.back : flashcard.front}</div>
                 </div>
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-sm text-muted-foreground">
                   Click to flip
@@ -99,10 +101,7 @@ export function FlashcardDetail({ deckId, flashcardId }: FlashcardDetailProps) {
               >
                 Back to Deck
               </button>
-              <EditFlashcardButton
-                flashcard={flashcard}
-                onSuccess={() => window.location.reload()}
-              />
+              <EditFlashcardButton flashcard={flashcard} onSuccess={() => window.location.reload()} />
             </div>
           </div>
         ) : null}

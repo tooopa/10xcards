@@ -1,6 +1,6 @@
 /**
  * Tag Validation Schemas
- * 
+ *
  * Zod schemas for validating tag-related API requests.
  */
 
@@ -14,12 +14,12 @@ export const TagListQuerySchema = z.object({
   deck_id: z
     .string()
     .regex(/^\d+$/, "deck_id must be a valid integer")
-    .transform(val => val)
+    .transform((val) => val)
     .optional(),
   search: z
     .string()
     .max(100, "search must not exceed 100 characters")
-    .transform(val => val.trim())
+    .transform((val) => val.trim())
     .optional(),
 });
 
@@ -31,10 +31,8 @@ export const CreateTagSchema = z.object({
     .string()
     .min(1, "name is required")
     .max(50, "name must not exceed 50 characters")
-    .transform(val => normalizeTagName(val)),
-  deck_id: z
-    .string()
-    .regex(/^\d+$/, "deck_id must be a valid integer"),
+    .transform((val) => normalizeTagName(val)),
+  deck_id: z.string().regex(/^\d+$/, "deck_id must be a valid integer"),
 });
 
 /**
@@ -45,20 +43,18 @@ export const UpdateTagSchema = z.object({
     .string()
     .min(1, "name is required")
     .max(50, "name must not exceed 50 characters")
-    .transform(val => normalizeTagName(val)),
+    .transform((val) => normalizeTagName(val)),
 });
 
 /**
  * Schema for tag ID path parameter
  */
-export const TagIdSchema = z
-  .string()
-  .regex(/^\d+$/, "tag id must be a valid integer");
+export const TagIdSchema = z.string().regex(/^\d+$/, "tag id must be a valid integer");
 
 /**
  * Normalizes tag name by trimming whitespace
  * Note: We keep case-sensitive for MVP, can add lowercase normalization later
- * 
+ *
  * @param name - Raw tag name input
  * @returns Normalized tag name
  */
@@ -72,4 +68,3 @@ export function normalizeTagName(name: string): string {
 export type TagListQueryInput = z.infer<typeof TagListQuerySchema>;
 export type CreateTagInput = z.infer<typeof CreateTagSchema>;
 export type UpdateTagInput = z.infer<typeof UpdateTagSchema>;
-

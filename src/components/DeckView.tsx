@@ -54,9 +54,7 @@ export function DeckView({ deckId }: DeckViewProps) {
                   </span>
                 )}
               </div>
-              {deck.description && (
-                <p className="text-muted-foreground text-lg">{deck.description}</p>
-              )}
+              {deck.description && <p className="text-muted-foreground text-lg">{deck.description}</p>}
               <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
                 <span>{deck.flashcard_count} flashcards</span>
                 <span>Created {new Date(deck.created_at).toLocaleDateString()}</span>
@@ -73,7 +71,7 @@ export function DeckView({ deckId }: DeckViewProps) {
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Add AI Flashcards
           </a>
@@ -96,9 +94,7 @@ export function DeckView({ deckId }: DeckViewProps) {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🃏</div>
               <h3 className="text-xl font-semibold text-foreground mb-2">No flashcards yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Start by generating AI flashcards or create them manually
-              </p>
+              <p className="text-muted-foreground mb-6">Start by generating AI flashcards or create them manually</p>
               <div className="flex gap-4 justify-center">
                 <a
                   href={`/generate?deck=${deckId}`}

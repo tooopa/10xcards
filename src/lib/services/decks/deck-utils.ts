@@ -1,6 +1,6 @@
 /**
  * Deck Utility Functions
- * 
+ *
  * Helper functions for deck operations, primarily for validation and verification.
  */
 
@@ -8,17 +8,13 @@ import type { SupabaseClient } from "../../../db/supabase.client";
 
 /**
  * Verifies that a deck exists and belongs to the specified user
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check ownership against
  * @param deckId - Deck ID to verify
  * @returns true if deck exists and belongs to user, false otherwise
  */
-export async function verifyDeckOwnership(
-  supabase: SupabaseClient,
-  userId: string,
-  deckId: string
-): Promise<boolean> {
+export async function verifyDeckOwnership(supabase: SupabaseClient, userId: string, deckId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
       .from("decks")
@@ -42,7 +38,7 @@ export async function verifyDeckOwnership(
 
 /**
  * Gets deck information if it exists and belongs to user
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check ownership against
  * @param deckId - Deck ID to retrieve
@@ -72,4 +68,3 @@ export async function getDeckIfOwned(
     return null;
   }
 }
-

@@ -1,18 +1,12 @@
 /**
  * Tag Service
- * 
+ *
  * Business logic for tag operations including CRUD operations for tags
  * and tag-flashcard associations.
  */
 
 import type { SupabaseClient } from "../../../db/supabase.client";
-import type { 
-  TagDto, 
-  TagWithUsageDto, 
-  TagListQuery,
-  CreateTagCommand,
-  UpdateTagCommand 
-} from "../../../types";
+import type { TagDto, TagWithUsageDto, TagListQuery, CreateTagCommand, UpdateTagCommand } from "../../../types";
 import {
   DuplicateTagError,
   TagNotFoundError,
@@ -29,7 +23,7 @@ import {
 /**
  * Lists all tags accessible to the user with usage counts and optional filters
  * Returns both global tags (accessible to all) and user's deck-scoped tags
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to fetch tags for
  * @param filters - Optional filters (scope, deck_id, search)
@@ -47,14 +41,16 @@ export async function listTags(
     // We'll count flashcard_tags associations per tag
     let query = supabase
       .from("tags")
-      .select(`
+      .select(
+        `
         id,
         name,
         scope,
         deck_id,
         created_at,
         flashcard_tags(count)
-      `)
+      `
+      )
       .is("deleted_at", null);
 
     // Filter by scope if provided
@@ -109,17 +105,13 @@ export async function listTags(
 
 /**
  * Gets a single tag by ID (with access verification)
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID for access verification
  * @param tagId - Tag ID to retrieve
  * @returns Tag DTO or null if not found/not accessible
  */
-export async function getTag(
-  supabase: SupabaseClient,
-  userId: string,
-  tagId: string
-): Promise<TagDto | null> {
+export async function getTag(supabase: SupabaseClient, userId: string, tagId: string): Promise<TagDto | null> {
   try {
     const { data: tag, error } = await supabase
       .from("tags")
@@ -155,18 +147,14 @@ export async function getTag(
 
 /**
  * Creates a new deck-scoped tag
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID creating the tag
  * @param command - Tag creation data (name, deck_id)
  * @returns Created tag DTO
  * @throws DuplicateTagError if tag name already exists in deck
  */
-export async function createTag(
-  supabase: SupabaseClient,
-  userId: string,
-  command: CreateTagCommand
-): Promise<TagDto> {
+export async function createTag(supabase: SupabaseClient, userId: string, command: CreateTagCommand): Promise<TagDto> {
   try {
     const { data: tag, error } = await supabase
       .from("tags")
@@ -207,7 +195,7 @@ export async function createTag(
 /**
  * Updates a deck-scoped tag's name
  * Cannot update global tags (scope='global')
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID for ownership verification
  * @param tagId - Tag ID to update
@@ -261,10 +249,7 @@ export async function updateTag(
     if (error) {
       // Check for unique constraint violation
       if (isUniqueViolation(error)) {
-        throw new DuplicateTagError(
-          updates.name,
-          existingTag.deck_id ? existingTag.deck_id.toString() : ""
-        );
+        throw new DuplicateTagError(updates.name, existingTag.deck_id ? existingTag.deck_id.toString() : "");
       }
       console.error("Error updating tag:", error);
       throw new Error("Failed to update tag");
@@ -298,17 +283,13 @@ export async function updateTag(
  * Deletes a deck-scoped tag
  * Cannot delete global tags (scope='global')
  * Cascade deletion of flashcard_tags handled by database (ON DELETE CASCADE)
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID for ownership verification
  * @param tagId - Tag ID to delete
  * @throws TagNotFoundError if tag not found or is global
  */
-export async function deleteTag(
-  supabase: SupabaseClient,
-  userId: string,
-  tagId: string
-): Promise<void> {
+export async function deleteTag(supabase: SupabaseClient, userId: string, tagId: string): Promise<void> {
   try {
     // First, verify the tag exists and is deck-scoped
     const { data: existingTag, error: fetchError } = await supabase
@@ -373,7 +354,7 @@ export async function deleteTag(
  * A tag is accessible if:
  * - It's a global tag (scope="global"), OR
  * - It's a deck tag (scope="deck") belonging to one of the user's decks
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check access for
  * @param tagIds - Array of tag IDs to verify
@@ -389,7 +370,7 @@ export async function verifyTagsAccessible(
   }
 
   try {
-    const numericTagIds = tagIds.map(id => parseInt(id));
+    const numericTagIds = tagIds.map((id) => parseInt(id));
 
     // Get all tags by IDs
     const { data: tags, error } = await supabase
@@ -435,7 +416,7 @@ export async function verifyTagsAccessible(
 
 /**
  * Replaces all tags for a flashcard (transaction: DELETE + INSERT)
- * 
+ *
  * @param supabase - Supabase client instance
  * @param flashcardId - Flashcard ID
  * @param tagIds - Array of new tag IDs to set
@@ -447,7 +428,7 @@ export async function replaceFlashcardTags(
 ): Promise<void> {
   try {
     const numericFlashcardId = parseInt(flashcardId);
-    const numericTagIds = tagIds.map(id => parseInt(id));
+    const numericTagIds = tagIds.map((id) => parseInt(id));
 
     // Step 1: Delete all existing tags for this flashcard
     const { error: deleteError } = await supabase
@@ -462,14 +443,12 @@ export async function replaceFlashcardTags(
 
     // Step 2: Insert new tags (if any)
     if (numericTagIds.length > 0) {
-      const insertData = numericTagIds.map(tagId => ({
+      const insertData = numericTagIds.map((tagId) => ({
         flashcard_id: numericFlashcardId,
         tag_id: tagId,
       }));
 
-      const { error: insertError } = await supabase
-        .from("flashcard_tags")
-        .insert(insertData);
+      const { error: insertError } = await supabase.from("flashcard_tags").insert(insertData);
 
       if (insertError) {
         console.error("Error inserting flashcard tags:", insertError);
@@ -484,32 +463,26 @@ export async function replaceFlashcardTags(
 
 /**
  * Adds tags to a flashcard (uses upsert to avoid duplicates)
- * 
+ *
  * @param supabase - Supabase client instance
  * @param flashcardId - Flashcard ID
  * @param tagIds - Array of tag IDs to add
  */
-export async function addFlashcardTags(
-  supabase: SupabaseClient,
-  flashcardId: string,
-  tagIds: string[]
-): Promise<void> {
+export async function addFlashcardTags(supabase: SupabaseClient, flashcardId: string, tagIds: string[]): Promise<void> {
   try {
     const numericFlashcardId = parseInt(flashcardId);
-    const numericTagIds = tagIds.map(id => parseInt(id));
+    const numericTagIds = tagIds.map((id) => parseInt(id));
 
-    const insertData = numericTagIds.map(tagId => ({
+    const insertData = numericTagIds.map((tagId) => ({
       flashcard_id: numericFlashcardId,
       tag_id: tagId,
     }));
 
     // Use upsert with onConflict to handle duplicates gracefully
-    const { error } = await supabase
-      .from("flashcard_tags")
-      .upsert(insertData, {
-        onConflict: "flashcard_id,tag_id",
-        ignoreDuplicates: true,
-      });
+    const { error } = await supabase.from("flashcard_tags").upsert(insertData, {
+      onConflict: "flashcard_id,tag_id",
+      ignoreDuplicates: true,
+    });
 
     if (error) {
       console.error("Error adding flashcard tags:", error);
@@ -523,17 +496,13 @@ export async function addFlashcardTags(
 
 /**
  * Removes a specific tag from a flashcard
- * 
+ *
  * @param supabase - Supabase client instance
  * @param flashcardId - Flashcard ID
  * @param tagId - Tag ID to remove
  * @throws Error if association not found
  */
-export async function removeFlashcardTag(
-  supabase: SupabaseClient,
-  flashcardId: string,
-  tagId: string
-): Promise<void> {
+export async function removeFlashcardTag(supabase: SupabaseClient, flashcardId: string, tagId: string): Promise<void> {
   try {
     const numericFlashcardId = parseInt(flashcardId);
     const numericTagId = parseInt(tagId);
@@ -561,15 +530,12 @@ export async function removeFlashcardTag(
 
 /**
  * Gets all tags for a specific flashcard
- * 
+ *
  * @param supabase - Supabase client instance
  * @param flashcardId - Flashcard ID
  * @returns Array of tags
  */
-export async function getFlashcardTags(
-  supabase: SupabaseClient,
-  flashcardId: string
-): Promise<TagDto[]> {
+export async function getFlashcardTags(supabase: SupabaseClient, flashcardId: string): Promise<TagDto[]> {
   try {
     const numericFlashcardId = parseInt(flashcardId);
 
@@ -607,4 +573,3 @@ export async function getFlashcardTags(
     throw error;
   }
 }
-

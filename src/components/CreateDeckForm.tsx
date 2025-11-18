@@ -104,9 +104,7 @@ export function CreateDeckForm({ onSuccess }: CreateDeckFormProps) {
           disabled={isLoading}
           required
         />
-        {errors.name && (
-          <p className="text-sm text-destructive mt-1">{errors.name}</p>
-        )}
+        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
       </div>
 
       <div>
@@ -129,12 +127,8 @@ export function CreateDeckForm({ onSuccess }: CreateDeckFormProps) {
           rows={3}
           disabled={isLoading}
         />
-        {errors.description && (
-          <p className="text-sm text-destructive mt-1">{errors.description}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">
-          {description.length}/5000 characters
-        </p>
+        {errors.description && <p className="text-sm text-destructive mt-1">{errors.description}</p>}
+        <p className="text-xs text-muted-foreground mt-1">{description.length}/5000 characters</p>
       </div>
 
       <div className="flex gap-3 pt-4">

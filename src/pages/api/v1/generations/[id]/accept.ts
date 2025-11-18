@@ -1,8 +1,8 @@
 /**
  * POST /api/v1/generations/:id/accept
- * 
+ *
  * Accepts generation suggestions and creates flashcards
- * 
+ *
  * Flow:
  * 1. Validate request body
  * 2. Verify generation ownership
@@ -35,22 +35,12 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     // Validate generation ID
     const generationId = params.id;
     if (!generationId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Generation ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Generation ID is required", null, 400);
     }
 
     // Validate ID format (must be numeric)
     if (!/^\d+$/.test(generationId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Generation ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Generation ID must be a valid number", null, 400);
     }
 
     // Parse and validate request body
@@ -65,12 +55,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
     // Validate flashcards array is not empty
     if (flashcards.length === 0) {
-      return createErrorResponse(
-        "validation_error",
-        "Flashcards array cannot be empty",
-        null,
-        400
-      );
+      return createErrorResponse("validation_error", "Flashcards array cannot be empty", null, 400);
     }
 
     // Accept generation and create flashcards (transaction)
@@ -78,11 +63,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
     let result;
     try {
-      result = await generationService.acceptGeneration(
-        userId,
-        generationId,
-        flashcards
-      );
+      result = await generationService.acceptGeneration(userId, generationId, flashcards);
     } catch (error) {
       // Handle specific errors
       if (error instanceof Error) {
@@ -91,12 +72,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         }
 
         if (error.message.includes("Unauthorized")) {
-          return createErrorResponse(
-            "forbidden",
-            "You do not have permission to accept this generation",
-            null,
-            403
-          );
+          return createErrorResponse("forbidden", "You do not have permission to accept this generation", null, 403);
         }
 
         if (error.message.includes("Failed to create flashcards")) {
@@ -116,12 +92,6 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   } catch (error) {
     console.error("Error accepting generation:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "An unexpected error occurred while accepting generation",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "An unexpected error occurred while accepting generation", null, 500);
   }
 };
-

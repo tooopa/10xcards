@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { FlashcardProposalDto, GenerationCreateResponseDto } from "@/types";
+import { useState, useEffect } from "react";
+import type { GenerationSuggestionsDto, GenerationSuggestionDto } from "@/types";
 import { TextInputArea } from "./TextInputArea";
 import { GenerateButton } from "./GenerateButton";
 import { FlashcardList } from "./FlashcardList";
@@ -7,7 +7,7 @@ import { SkeletonLoader } from "./SkeletonLoader";
 import { BulkSaveButton } from "./BulkSaveButton";
 import { ErrorNotification } from "./ErrorNotification";
 
-export type FlashcardProposalViewModel = Omit<FlashcardProposalDto, "source"> & {
+export type FlashcardProposalViewModel = GenerationSuggestionDto & {
   accepted: boolean;
   edited: boolean;
   source: "ai-full" | "ai-edited";
@@ -24,7 +24,7 @@ export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps
   const [generationId, setGenerationId] = useState<number | null>(null);
   const [flashcards, setFlashcards] = useState<FlashcardProposalViewModel[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
-  const [availableDecks, setAvailableDecks] = useState<{id: string, name: string}[]>([]);
+  const [availableDecks, setAvailableDecks] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     fetchAvailableDecks();
@@ -37,18 +37,22 @@ export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps
       // Auto-select first deck if none selected
       setSelectedDeckId(availableDecks[0].id);
     }
-  }, [deckId, availableDecks]);
+  }, [deckId, availableDecks, selectedDeckId]);
 
   const fetchAvailableDecks = async () => {
     try {
-      const response = await fetch('/api/v1/decks');
+      const response = await fetch("/api/v1/decks");
       if (!response.ok) {
-        throw new Error('Failed to fetch decks');
+        throw new Error("Failed to fetch decks");
+      }
+      interface DeckOption {
+        id: string;
+        name: string;
       }
       const data = await response.json();
-      setAvailableDecks(data.data.map((deck: any) => ({ id: deck.id, name: deck.name })));
-    } catch (error) {
-      console.error('Could not fetch decks:', error);
+      setAvailableDecks(data.data.map((deck: DeckOption) => ({ id: deck.id, name: deck.name })));
+    } catch {
+      // ignore
     }
   };
 
@@ -62,13 +66,13 @@ export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps
       setIsLoading(true);
       setErrorMessage(null);
 
-      const response = await fetch("/api/generations", {
+      const response = await fetch("/api/v1/generations/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           source_text: textValue,
           model: "openai/gpt-4o-mini", // Default model for MVP
-          deck_id: selectedDeckId
+          deck_id: selectedDeckId,
         }),
       });
 
@@ -76,10 +80,10 @@ export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps
         throw new Error("Failed to generate flashcards. Please try again.");
       }
 
-      const data: GenerationCreateResponseDto = await response.json();
+      const data: GenerationSuggestionsDto = await response.json();
       setGenerationId(data.generation_id);
       setFlashcards(
-        data.flashcards_proposals.map((proposal) => ({
+        data.suggestions.map((proposal) => ({
           ...proposal,
           accepted: false,
           edited: false,
@@ -119,10 +123,11 @@ export function FlashcardGenerationView({ deckId }: FlashcardGenerationViewProps
 
       {/* Deck Selector */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">
+        <label htmlFor="deck-select" className="text-sm font-medium text-foreground">
           Select Deck for Generated Flashcards
         </label>
         <select
+          id="deck-select"
           value={selectedDeckId}
           onChange={(e) => setSelectedDeckId(e.target.value)}
           className="w-full px-3 py-2 border border-input bg-background rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"

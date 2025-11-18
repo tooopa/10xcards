@@ -22,7 +22,7 @@ export function Navigation() {
       setUser(null);
 
       // Clear onboarding status
-      localStorage.removeItem('onboarding_completed');
+      localStorage.removeItem("onboarding_completed");
 
       toast.success("Logged out successfully");
 
@@ -45,33 +45,20 @@ export function Navigation() {
               10xCards
             </a>
             <div className="hidden md:flex items-center gap-4">
-              <a
-                href="/"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Dashboard
               </a>
-              <a
-                href="/generate"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <a href="/generate" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Generate AI
               </a>
-              <a
-                href="/tags"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <a href="/tags" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Tags
               </a>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            {user && (
-              <span className="text-sm text-muted-foreground">
-                {user.email}
-              </span>
-            )}
+            {user && <span className="text-sm text-muted-foreground">{user.email}</span>}
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}

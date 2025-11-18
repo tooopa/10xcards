@@ -4,10 +4,7 @@
  */
 
 import type { APIRoute } from "astro";
-import {
-  listDecks,
-  createDeck,
-} from "../../../../lib/services/decks/deck.service";
+import { listDecks, createDeck } from "../../../../lib/services/decks/deck.service";
 import { DeckListQuerySchema, CreateDeckSchema } from "../../../../lib/validation/decks";
 import {
   createErrorResponse,
@@ -29,14 +26,6 @@ export const GET: APIRoute = async ({ url, locals }) => {
   try {
     // Get user ID
     const userId = getUserIdFromLocals(locals);
-  } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return createUnauthorizedResponse();
-    }
-    throw error;
-  }
-
-  try {
 
     // Parse and validate query parameters
     const queryParams = {
@@ -54,11 +43,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     }
 
     // Query decks using service
-    const result = await listDecks(
-      locals.supabase,
-      userId,
-      validationResult.data
-    );
+    const result = await listDecks(locals.supabase, userId, validationResult.data);
 
     // Calculate pagination metadata
     const page = validationResult.data.page;
@@ -80,14 +65,12 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     return createSuccessResponse(response, 200);
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return createUnauthorizedResponse();
+    }
     console.error("Error listing decks:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to list decks",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to list decks", null, 500);
   }
 };
 
@@ -98,15 +81,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Get user ID
     const userId = getUserIdFromLocals(locals);
-  } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return createUnauthorizedResponse();
-    }
-    throw error;
-  }
-
-  try {
-
     // Parse and validate request body
     const body = await request.json();
     const validationResult = CreateDeckSchema.safeParse(body);
@@ -125,6 +99,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     return createSuccessResponse(deck, 201);
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return createUnauthorizedResponse();
+    }
     console.error("Error creating deck:", error);
 
     // Handle duplicate deck name error
@@ -132,16 +109,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // Extract deck name from error (it's in the error message)
       const nameMatch = error.message.match(/"([^"]+)"/);
       const deckName = nameMatch ? nameMatch[1] : "unknown";
-      
+
       return createConflictResponse("deck", "name", deckName);
     }
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to create deck",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to create deck", null, 500);
   }
 };
-

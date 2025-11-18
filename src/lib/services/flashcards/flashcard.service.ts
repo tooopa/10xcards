@@ -1,6 +1,6 @@
 /**
  * Flashcard Service
- * 
+ *
  * Business logic for flashcard CRUD operations.
  */
 
@@ -16,7 +16,7 @@ import type {
 
 /**
  * Lists flashcards for a user with filtering and pagination
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to filter by
  * @param filters - Query filters and pagination options
@@ -117,17 +117,13 @@ export async function listFlashcards(
 
 /**
  * Gets a single flashcard by ID for a specific user
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check ownership
  * @param id - Flashcard ID
  * @returns Flashcard data or null if not found
  */
-export async function getFlashcard(
-  supabase: SupabaseClient,
-  userId: string,
-  id: string
-): Promise<FlashcardDto | null> {
+export async function getFlashcard(supabase: SupabaseClient, userId: string, id: string): Promise<FlashcardDto | null> {
   try {
     const { data, error } = await supabase
       .from("flashcards")
@@ -182,7 +178,7 @@ export async function getFlashcard(
 
 /**
  * Creates a new flashcard with source="manual"
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID creating the flashcard
  * @param command - Flashcard creation data
@@ -231,7 +227,7 @@ export async function createFlashcard(
 /**
  * Updates an existing flashcard
  * Handles source transition: ai-full -> ai-edited when front/back is modified
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check ownership
  * @param id - Flashcard ID
@@ -313,17 +309,13 @@ export async function updateFlashcard(
 
 /**
  * Soft-deletes a flashcard
- * 
+ *
  * @param supabase - Supabase client instance
  * @param userId - User ID to check ownership
  * @param id - Flashcard ID
  * @throws Error if flashcard not found
  */
-export async function deleteFlashcard(
-  supabase: SupabaseClient,
-  userId: string,
-  id: string
-): Promise<void> {
+export async function deleteFlashcard(supabase: SupabaseClient, userId: string, id: string): Promise<void> {
   try {
     const { error, count } = await supabase
       .from("flashcards")
@@ -350,7 +342,7 @@ export async function deleteFlashcard(
 /**
  * Determines new source based on current source and edited fields
  * Implements logic: ai-full + edit front/back -> ai-edited
- * 
+ *
  * @param currentSource - Current flashcard source
  * @param frontEdited - Whether front field is being edited
  * @param backEdited - Whether back field is being edited
@@ -369,4 +361,3 @@ export function determineNewSource(
   // Otherwise, keep the current source
   return currentSource;
 }
-

@@ -1,6 +1,6 @@
 /**
  * Generation Service
- * 
+ *
  * Business logic for managing AI-powered flashcard generations.
  * Handles CRUD operations, statistics tracking, and transaction management
  * for the generations feature.
@@ -12,12 +12,10 @@ import type {
   GenerationDetailDto,
   GenerationListQuery,
   PaginationMeta,
-  GenerationSuggestionsDto,
   AcceptGenerationFlashcardInput,
   AcceptGenerationResultDto,
   FlashcardSource,
 } from "../../../types";
-import { hashSourceText } from "../../validation/generations";
 
 /**
  * Data for creating a new generation record
@@ -60,15 +58,12 @@ export class GenerationService {
 
   /**
    * Lists generations with pagination and filters
-   * 
+   *
    * @param userId - User ID to filter by
    * @param query - Query parameters (pagination, filters, sorting)
    * @returns Paginated list of generations
    */
-  async listGenerations(
-    userId: string,
-    query: GenerationListQuery
-  ): Promise<GenerationListResult> {
+  async listGenerations(userId: string, query: GenerationListQuery): Promise<GenerationListResult> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const sort = query.sort ?? "created_at";
@@ -76,10 +71,7 @@ export class GenerationService {
     const offset = (page - 1) * limit;
 
     // Build query
-    let dbQuery = this.supabase
-      .from("generations")
-      .select("*", { count: "exact" })
-      .eq("user_id", userId);
+    let dbQuery = this.supabase.from("generations").select("*", { count: "exact" }).eq("user_id", userId);
 
     // Apply deck filter if provided
     if (query.deck_id) {
@@ -100,7 +92,7 @@ export class GenerationService {
     }
 
     // Map to DTOs
-    const generations: GenerationSummaryDto[] = (data || []).map(row => ({
+    const generations: GenerationSummaryDto[] = (data || []).map((row) => ({
       id: row.id.toString(),
       deck_id: row.deck_id.toString(),
       model: row.model,
@@ -132,15 +124,12 @@ export class GenerationService {
 
   /**
    * Gets a single generation by ID
-   * 
+   *
    * @param userId - User ID (for authorization)
    * @param generationId - Generation ID to retrieve
    * @returns Generation details or null if not found
    */
-  async getGeneration(
-    userId: string,
-    generationId: string
-  ): Promise<GenerationDetailDto | null> {
+  async getGeneration(userId: string, generationId: string): Promise<GenerationDetailDto | null> {
     const { data, error } = await this.supabase
       .from("generations")
       .select("*")
@@ -177,13 +166,11 @@ export class GenerationService {
   /**
    * Creates a new generation record
    * Called after AI successfully generates flashcard suggestions
-   * 
+   *
    * @param data - Generation metadata
    * @returns Generation ID and created_at timestamp
    */
-  async createGeneration(
-    data: CreateGenerationData
-  ): Promise<{ id: string; created_at: string }> {
+  async createGeneration(data: CreateGenerationData): Promise<{ id: string; created_at: string }> {
     const { data: generation, error } = await this.supabase
       .from("generations")
       .insert({
@@ -213,7 +200,7 @@ export class GenerationService {
   /**
    * Accepts generation suggestions and creates flashcards
    * Uses a transaction to ensure atomicity
-   * 
+   *
    * @param userId - User ID (for authorization)
    * @param generationId - Generation ID being accepted
    * @param flashcards - Flashcards to create
@@ -242,7 +229,7 @@ export class GenerationService {
     const deckId = generation.deck_id;
 
     // 2. Prepare flashcards for insertion
-    const flashcardsToInsert = flashcards.map(fc => {
+    const flashcardsToInsert = flashcards.map((fc) => {
       const source: FlashcardSource = fc.edited ? "ai-edited" : "ai-full";
       return {
         user_id: userId,
@@ -265,8 +252,8 @@ export class GenerationService {
     }
 
     // 4. Calculate statistics
-    const uneditedCount = flashcards.filter(fc => !fc.edited).length;
-    const editedCount = flashcards.filter(fc => fc.edited).length;
+    const uneditedCount = flashcards.filter((fc) => !fc.edited).length;
+    const editedCount = flashcards.filter((fc) => fc.edited).length;
 
     // 5. Update generation statistics
     const { error: updateError } = await this.supabase
@@ -287,7 +274,7 @@ export class GenerationService {
     // 6. Format response
     return {
       accepted_count: createdFlashcards.length,
-      flashcards: createdFlashcards.map(fc => ({
+      flashcards: createdFlashcards.map((fc) => ({
         id: fc.id.toString(),
         front: fc.front,
         back: fc.back,
@@ -302,21 +289,19 @@ export class GenerationService {
   /**
    * Logs a generation error to the error logs table
    * Used for monitoring and debugging AI service issues
-   * 
+   *
    * @param data - Error information to log
    */
   async logGenerationError(data: GenerationErrorData): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from("generation_error_logs")
-        .insert({
-          user_id: data.userId,
-          model: data.model,
-          source_text_hash: data.sourceTextHash,
-          source_text_length: data.sourceTextLength,
-          error_code: data.errorCode,
-          error_message: data.errorMessage,
-        });
+      const { error } = await this.supabase.from("generation_error_logs").insert({
+        user_id: data.userId,
+        model: data.model,
+        source_text_hash: data.sourceTextHash,
+        source_text_length: data.sourceTextLength,
+        error_code: data.errorCode,
+        error_message: data.errorMessage,
+      });
 
       if (error) {
         // Log to console but don't throw - logging errors shouldn't break the flow
@@ -330,17 +315,13 @@ export class GenerationService {
   /**
    * Checks for recent duplicate generations based on source text hash
    * Optional deduplication feature to prevent waste
-   * 
+   *
    * @param userId - User ID
    * @param sourceTextHash - SHA-256 hash of source text
    * @param hoursBack - How many hours to look back (default: 24)
    * @returns Generation ID if duplicate found, null otherwise
    */
-  async findRecentDuplicate(
-    userId: string,
-    sourceTextHash: string,
-    hoursBack: number = 24
-  ): Promise<string | null> {
+  async findRecentDuplicate(userId: string, sourceTextHash: string, hoursBack = 24): Promise<string | null> {
     const thresholdTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
 
     const { data, error } = await this.supabase
@@ -361,4 +342,3 @@ export class GenerationService {
     return data ? data.id.toString() : null;
   }
 }
-

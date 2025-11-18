@@ -13,13 +13,13 @@ export function OnboardingGuide() {
   const checkUserOnboardingStatus = async () => {
     try {
       // Check if user has completed onboarding
-      const onboardingCompleted = localStorage.getItem('onboarding_completed');
-      if (onboardingCompleted === 'true') {
+      const onboardingCompleted = localStorage.getItem("onboarding_completed");
+      if (onboardingCompleted === "true") {
         return;
       }
 
       // Check user's decks to determine if they're new
-      const response = await fetch('/api/v1/decks');
+      const response = await fetch("/api/v1/decks");
       if (!response.ok) {
         return;
       }
@@ -28,9 +28,7 @@ export function OnboardingGuide() {
       const decks: DeckDto[] = data.data;
 
       // If user only has the default "Uncategorized" deck with 0 flashcards, they're likely new
-      const hasOnlyDefaultDeck = decks.length === 1 &&
-        decks[0].is_default &&
-        decks[0].flashcard_count === 0;
+      const hasOnlyDefaultDeck = decks.length === 1 && decks[0].is_default && decks[0].flashcard_count === 0;
 
       if (hasOnlyDefaultDeck) {
         setIsNewUser(true);
@@ -38,13 +36,13 @@ export function OnboardingGuide() {
       }
     } catch (error) {
       // Silently fail - don't show onboarding if we can't determine status
-      console.log('Could not determine onboarding status:', error);
+      console.log("Could not determine onboarding status:", error);
     }
   };
 
   const dismissOnboarding = () => {
     setIsVisible(false);
-    localStorage.setItem('onboarding_completed', 'true');
+    localStorage.setItem("onboarding_completed", "true");
   };
 
   const nextStep = () => {
@@ -73,9 +71,7 @@ export function OnboardingGuide() {
         <div className="flex items-center gap-3">
           <div className="text-2xl">{currentStepData.icon}</div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">
-              {currentStepData.title}
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground">{currentStepData.title}</h3>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-muted-foreground">
                 Step {currentStep + 1} of {onboardingSteps.length}
@@ -85,11 +81,7 @@ export function OnboardingGuide() {
                   <div
                     key={index}
                     className={`w-2 h-2 rounded-full ${
-                      index === currentStep
-                        ? 'bg-primary'
-                        : index < currentStep
-                        ? 'bg-primary/50'
-                        : 'bg-border'
+                      index === currentStep ? "bg-primary" : index < currentStep ? "bg-primary/50" : "bg-border"
                     }`}
                   />
                 ))}
@@ -97,19 +89,14 @@ export function OnboardingGuide() {
             </div>
           </div>
         </div>
-        <button
-          onClick={dismissOnboarding}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
+        <button onClick={dismissOnboarding} className="text-muted-foreground hover:text-foreground transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      <p className="text-muted-foreground mb-6">
-        {currentStepData.description}
-      </p>
+      <p className="text-muted-foreground mb-6">{currentStepData.description}</p>
 
       {currentStepData.action && (
         <div className="flex gap-3">
@@ -126,7 +113,7 @@ export function OnboardingGuide() {
             onClick={nextStep}
             className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
-            {currentStep === onboardingSteps.length - 1 ? 'Get Started' : 'Next'}
+            {currentStep === onboardingSteps.length - 1 ? "Get Started" : "Next"}
           </button>
         </div>
       )}
@@ -138,13 +125,15 @@ const onboardingSteps = [
   {
     icon: "👋",
     title: "Welcome to 10xCards!",
-    description: "You're all set up with your default 'Uncategorized' deck. Let's learn how to create your first flashcards using AI.",
+    description:
+      "You're all set up with your default 'Uncategorized' deck. Let's learn how to create your first flashcards using AI.",
     action: null,
   },
   {
     icon: "🤖",
     title: "Generate AI Flashcards",
-    description: "Paste any text content (like textbook excerpts, articles, or notes) and our AI will automatically create high-quality flashcards for you.",
+    description:
+      "Paste any text content (like textbook excerpts, articles, or notes) and our AI will automatically create high-quality flashcards for you.",
     action: (
       <a
         href="/generate"
@@ -157,19 +146,22 @@ const onboardingSteps = [
   {
     icon: "📚",
     title: "Organize with Decks",
-    description: "Create custom decks to organize your flashcards by subject, topic, or course. Each deck can have its own tags for better organization.",
+    description:
+      "Create custom decks to organize your flashcards by subject, topic, or course. Each deck can have its own tags for better organization.",
     action: null,
   },
   {
     icon: "🏷️",
     title: "Use Tags for Better Search",
-    description: "Add tags to your flashcards to make them easier to find. Tags are specific to each deck and help you filter and organize your content.",
+    description:
+      "Add tags to your flashcards to make them easier to find. Tags are specific to each deck and help you filter and organize your content.",
     action: null,
   },
   {
     icon: "🎯",
     title: "Start Learning",
-    description: "Once you have flashcards, you can start reviewing them. Use the search and filter features to focus on specific topics.",
+    description:
+      "Once you have flashcards, you can start reviewing them. Use the search and filter features to focus on specific topics.",
     action: null,
   },
 ];

@@ -1,6 +1,6 @@
 /**
  * Flashcard AI Service
- * 
+ *
  * High-level service for AI-powered flashcard generation using OpenRouter.
  * Handles prompt construction, API calls, response validation, and error handling.
  */
@@ -9,10 +9,10 @@ import { OpenRouterService } from "../../openrouter.service";
 import { OpenRouterError } from "../../openrouter.types";
 import type { GenerationSuggestionDto } from "../../../types";
 import { validateAISuggestions } from "../../validation/generations";
-import { 
-  FLASHCARD_SYSTEM_PROMPT, 
-  buildFlashcardPrompt, 
-  FLASHCARD_RESPONSE_SCHEMA 
+import {
+  FLASHCARD_SYSTEM_PROMPT,
+  buildFlashcardPrompt,
+  FLASHCARD_RESPONSE_SCHEMA,
 } from "../../prompts/flashcard-generation";
 import { getModelConfig, OPENROUTER_CONFIG } from "../../config/ai.config";
 
@@ -30,7 +30,10 @@ export class OpenRouterTimeoutError extends Error {
  * Custom error for invalid AI responses
  */
 export class InvalidAIResponseError extends Error {
-  constructor(message: string, public readonly response?: unknown) {
+  constructor(
+    message: string,
+    public readonly response?: unknown
+  ) {
     super(message);
     this.name = "InvalidAIResponseError";
   }
@@ -72,7 +75,7 @@ export class FlashcardAIService {
     }
 
     this.defaultTimeout = config.defaultTimeout || OPENROUTER_CONFIG.DEFAULT_TIMEOUT;
-    
+
     this.openRouter = new OpenRouterService({
       apiKey: config.apiKey,
       apiUrl: config.apiUrl || OPENROUTER_CONFIG.API_URL,
@@ -83,7 +86,7 @@ export class FlashcardAIService {
 
   /**
    * Generates flashcard suggestions from source text using specified AI model
-   * 
+   *
    * @param sourceText - The text to generate flashcards from (1000-10000 chars)
    * @param model - OpenRouter model ID (must be in whitelist)
    * @returns Array of flashcard suggestions with front and back text
@@ -91,14 +94,11 @@ export class FlashcardAIService {
    * @throws {OpenRouterAPIError} If API request fails
    * @throws {InvalidAIResponseError} If AI response format is invalid
    */
-  async generateFlashcards(
-    sourceText: string,
-    model: string
-  ): Promise<GenerationSuggestionDto[]> {
+  async generateFlashcards(sourceText: string, model: string): Promise<GenerationSuggestionDto[]> {
     try {
       // Get model configuration and validate
       const modelConfig = getModelConfig(model);
-      
+
       // Configure the OpenRouter service
       this.openRouter.setModel(model, {
         temperature: 0.7,
@@ -135,11 +135,7 @@ export class FlashcardAIService {
 
         // Handle OpenRouter-specific errors
         if (error instanceof OpenRouterError) {
-          throw new OpenRouterAPIError(
-            error.message,
-            error.code,
-            error.status
-          );
+          throw new OpenRouterAPIError(error.message, error.code, error.status);
         }
 
         // Re-throw unexpected errors
@@ -149,28 +145,19 @@ export class FlashcardAIService {
       // Validate and parse AI response
       try {
         const suggestions = validateAISuggestions(response);
-        
+
         if (suggestions.length === 0) {
-          throw new InvalidAIResponseError(
-            "AI returned no flashcards",
-            response
-          );
+          throw new InvalidAIResponseError("AI returned no flashcards", response);
         }
 
         return suggestions;
       } catch (error) {
         if (error instanceof Error && error.message.includes("not valid JSON")) {
-          throw new InvalidAIResponseError(
-            "AI response is not valid JSON",
-            response
-          );
+          throw new InvalidAIResponseError("AI response is not valid JSON", response);
         }
-        
+
         if (error instanceof Error && error.message.includes("Invalid AI response format")) {
-          throw new InvalidAIResponseError(
-            error.message,
-            response
-          );
+          throw new InvalidAIResponseError(error.message, response);
         }
 
         throw error;
@@ -187,16 +174,10 @@ export class FlashcardAIService {
 
       // Wrap unexpected errors
       if (error instanceof Error) {
-        throw new OpenRouterAPIError(
-          `Unexpected error during generation: ${error.message}`,
-          "UNEXPECTED_ERROR"
-        );
+        throw new OpenRouterAPIError(`Unexpected error during generation: ${error.message}`, "UNEXPECTED_ERROR");
       }
 
-      throw new OpenRouterAPIError(
-        "An unknown error occurred during generation",
-        "UNKNOWN_ERROR"
-      );
+      throw new OpenRouterAPIError("An unknown error occurred during generation", "UNKNOWN_ERROR");
     }
   }
 
@@ -249,11 +230,10 @@ export class FlashcardAIService {
       if (error.status === 401) return 500; // Don't expose auth errors
       if (error.status === 429) return 503;
       if (error.status && error.status >= 500) return 503;
-      
+
       return 502; // Bad Gateway for API errors
     }
 
     return 500; // Internal Server Error
   }
 }
-

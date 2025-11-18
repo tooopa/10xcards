@@ -1,16 +1,26 @@
 ---
+import Layout from "../layouts/Layout.astro";
+import DashboardApp from "../components/dashboard/DashboardApp.tsx";
+
 export const prerender = false;
+
+const pageTitle = "Dashboard – 10xCards";
+const pageDescription = "Zarządzaj taliami AI, generuj fiszki i monitoruj postępy w jednym widoku.";
+const canonicalUrl = Astro.url;
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard - 10xCards</title>
-  </head>
-  <body>
-    <h1>Welcome to 10xCards Dashboard</h1>
-    <p>This is a temporary simplified dashboard page.</p>
-  </body>
-</html>
+<Layout title={pageTitle} description={pageDescription}>
+  <Fragment slot="head">
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content="/og-dashboard.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <link rel="canonical" href={canonicalUrl} />
+  </Fragment>
+
+  <DashboardApp client:only="react" />
+</Layout>

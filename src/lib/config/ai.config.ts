@@ -1,6 +1,6 @@
 /**
  * AI Configuration for OpenRouter.ai integration
- * 
+ *
  * This file contains configuration for AI model selection, rate limiting,
  * and other AI-related settings.
  */
@@ -140,6 +140,5 @@ export function getAllowedModelIds(): string[] {
  * Get recommended models only
  */
 export function getRecommendedModels(): ModelConfig[] {
-  return Object.values(ALLOWED_MODELS).filter(model => model.recommended);
+  return Object.values(ALLOWED_MODELS).filter((model) => model.recommended);
 }
-

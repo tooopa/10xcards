@@ -205,20 +205,6 @@ export interface AcceptGenerationResultDto {
 }
 
 /**
- * Legacy types for backward compatibility with existing React components
- * TODO: Update components to use new type names
- */
-export type FlashcardProposalDto = GenerationSuggestionDto & {
-  source: FlashcardSource;
-};
-
-export interface GenerationCreateResponseDto {
-  generation_id: number;
-  flashcards_proposals: FlashcardProposalDto[];
-  generated_count: number;
-}
-
-/**
  * Flashcard creation types (used by bulk save operations)
  */
 export interface FlashcardsCreateCommand {

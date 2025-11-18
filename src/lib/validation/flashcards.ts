@@ -1,6 +1,6 @@
 /**
  * Flashcard Validation Schemas
- * 
+ *
  * Zod schemas for validating flashcard-related requests.
  */
 
@@ -40,8 +40,11 @@ export const FlashcardListQuerySchema = z.object({
   tag_id: z.string().min(1).optional(),
   search: z
     .string()
-    .max(FLASHCARD_CONSTRAINTS.SEARCH_MAX_LENGTH, `Search query must not exceed ${FLASHCARD_CONSTRAINTS.SEARCH_MAX_LENGTH} characters`)
-    .transform(text => text.trim())
+    .max(
+      FLASHCARD_CONSTRAINTS.SEARCH_MAX_LENGTH,
+      `Search query must not exceed ${FLASHCARD_CONSTRAINTS.SEARCH_MAX_LENGTH} characters`
+    )
+    .transform((text) => text.trim())
     .optional(),
   sort: FlashcardSortFieldSchema.optional().default("created_at"),
   order: z.enum(["asc", "desc"]).optional().default("desc"),
@@ -56,14 +59,26 @@ export const CreateFlashcardSchema = z.object({
   deck_id: z.string().min(1, "Deck ID is required"),
   front: z
     .string()
-    .min(FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH, `Front must be at least ${FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH} character`)
-    .max(FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH, `Front must not exceed ${FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH} characters`)
-    .transform(text => text.trim()),
+    .min(
+      FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH,
+      `Front must be at least ${FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH} character`
+    )
+    .max(
+      FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH,
+      `Front must not exceed ${FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH} characters`
+    )
+    .transform((text) => text.trim()),
   back: z
     .string()
-    .min(FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH, `Back must be at least ${FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH} character`)
-    .max(FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH, `Back must not exceed ${FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH} characters`)
-    .transform(text => text.trim()),
+    .min(
+      FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH,
+      `Back must be at least ${FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH} character`
+    )
+    .max(
+      FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH,
+      `Back must not exceed ${FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH} characters`
+    )
+    .transform((text) => text.trim()),
 });
 
 /**
@@ -75,23 +90,32 @@ export const UpdateFlashcardSchema = z
     deck_id: z.string().min(1).optional(),
     front: z
       .string()
-      .min(FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH, `Front must be at least ${FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH} character`)
-      .max(FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH, `Front must not exceed ${FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH} characters`)
-      .transform(text => text.trim())
+      .min(
+        FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH,
+        `Front must be at least ${FLASHCARD_CONSTRAINTS.FRONT_MIN_LENGTH} character`
+      )
+      .max(
+        FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH,
+        `Front must not exceed ${FLASHCARD_CONSTRAINTS.FRONT_MAX_LENGTH} characters`
+      )
+      .transform((text) => text.trim())
       .optional(),
     back: z
       .string()
-      .min(FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH, `Back must be at least ${FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH} character`)
-      .max(FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH, `Back must not exceed ${FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH} characters`)
-      .transform(text => text.trim())
+      .min(
+        FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH,
+        `Back must be at least ${FLASHCARD_CONSTRAINTS.BACK_MIN_LENGTH} character`
+      )
+      .max(
+        FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH,
+        `Back must not exceed ${FLASHCARD_CONSTRAINTS.BACK_MAX_LENGTH} characters`
+      )
+      .transform((text) => text.trim())
       .optional(),
   })
-  .refine(
-    (data) => data.deck_id !== undefined || data.front !== undefined || data.back !== undefined,
-    {
-      message: "At least one field (deck_id, front, or back) must be provided for update",
-    }
-  );
+  .refine((data) => data.deck_id !== undefined || data.front !== undefined || data.back !== undefined, {
+    message: "At least one field (deck_id, front, or back) must be provided for update",
+  });
 
 /**
  * Validation schema for PUT/POST /api/v1/flashcards/:id/tags request body
@@ -115,4 +139,3 @@ export function validateNumericId(id: string): boolean {
   const numId = parseInt(id, 10);
   return !isNaN(numId) && numId > 0 && Number.isSafeInteger(numId);
 }
-

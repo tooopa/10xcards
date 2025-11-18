@@ -5,16 +5,8 @@
  */
 
 import type { APIRoute } from "astro";
-import {
-  getDeck,
-  updateDeck,
-  deleteDeck,
-} from "../../../../lib/services/decks/deck.service";
-import {
-  UpdateDeckSchema,
-  validateNumericId,
-  validateDefaultDeckRename,
-} from "../../../../lib/validation/decks";
+import { getDeck, updateDeck, deleteDeck } from "../../../../lib/services/decks/deck.service";
+import { UpdateDeckSchema, validateNumericId, validateDefaultDeckRename } from "../../../../lib/validation/decks";
 import {
   createErrorResponse,
   createValidationErrorResponse,
@@ -40,21 +32,11 @@ export const GET: APIRoute = async ({ params, locals }) => {
     // Validate deck ID
     const deckId = params.id;
     if (!deckId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Deck ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Deck ID is required", null, 400);
     }
 
     if (!validateNumericId(deckId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Deck ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Deck ID must be a valid number", null, 400);
     }
 
     // Get deck from service
@@ -68,18 +50,13 @@ export const GET: APIRoute = async ({ params, locals }) => {
   } catch (error) {
     console.error("Error getting deck:", error);
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to get deck",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to get deck", null, 500);
   }
 };
 
 /**
  * PATCH handler - Updates a deck's name and/or description
- * 
+ *
  * Business rules:
  * - Default deck can only be renamed to "Uncategorized"
  * - At least one field (name or description) must be provided
@@ -93,21 +70,11 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     // Validate deck ID
     const deckId = params.id;
     if (!deckId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Deck ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Deck ID is required", null, 400);
     }
 
     if (!validateNumericId(deckId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Deck ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Deck ID must be a valid number", null, 400);
     }
 
     // Parse and validate request body
@@ -129,25 +96,15 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 
     // Business logic check: Validate default deck rename
     if (updates.name !== undefined) {
-      const renameAllowed = validateDefaultDeckRename(
-        currentDeck.is_default,
-        updates.name
-      );
+      const renameAllowed = validateDefaultDeckRename(currentDeck.is_default, updates.name);
 
       if (!renameAllowed) {
-        return createForbiddenResponse(
-          'Cannot rename default deck to anything other than "Uncategorized"'
-        );
+        return createForbiddenResponse('Cannot rename default deck to anything other than "Uncategorized"');
       }
     }
 
     // Update deck
-    const updatedDeck = await updateDeck(
-      locals.supabase,
-      userId,
-      deckId,
-      updates
-    );
+    const updatedDeck = await updateDeck(locals.supabase, userId, deckId, updates);
 
     return createSuccessResponse(updatedDeck, 200);
   } catch (error) {
@@ -158,7 +115,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       // Extract deck name from error
       const nameMatch = error.message.match(/"([^"]+)"/);
       const deckName = nameMatch ? nameMatch[1] : "unknown";
-      
+
       return createConflictResponse("deck", "name", deckName);
     }
 
@@ -167,18 +124,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       return createNotFoundResponse("Deck");
     }
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to update deck",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to update deck", null, 500);
   }
 };
 
 /**
  * DELETE handler - Deletes a deck and migrates its flashcards
- * 
+ *
  * This operation performs a complex transaction:
  * 1. Verifies deck exists and is not default
  * 2. Counts flashcards to migrate
@@ -186,7 +138,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
  * 4. Moves all flashcards to default deck
  * 5. Tags migrated flashcards with migration tag
  * 6. Soft-deletes the deck
- * 
+ *
  * Business rules:
  * - Cannot delete default deck
  * - All flashcards are migrated to default deck
@@ -200,21 +152,11 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     // Validate deck ID
     const deckId = params.id;
     if (!deckId) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Deck ID is required",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Deck ID is required", null, 400);
     }
 
     if (!validateNumericId(deckId)) {
-      return createErrorResponse(
-        "invalid_parameter",
-        "Deck ID must be a valid number",
-        null,
-        400
-      );
+      return createErrorResponse("invalid_parameter", "Deck ID must be a valid number", null, 400);
     }
 
     // Delete deck (complex transaction with migration)
@@ -226,12 +168,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 
     // Handle default deck deletion attempt
     if (error instanceof DefaultDeckError) {
-      return createErrorResponse(
-        "forbidden",
-        "Cannot delete the default deck",
-        null,
-        400
-      );
+      return createErrorResponse("forbidden", "Cannot delete the default deck", null, 400);
     }
 
     // Check if error is "not found" from service
@@ -241,20 +178,9 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 
     // Transaction errors
     if (error instanceof Error && error.message.includes("migrate")) {
-      return createErrorResponse(
-        "transaction_error",
-        "Failed to delete deck and migrate flashcards",
-        null,
-        500
-      );
+      return createErrorResponse("transaction_error", "Failed to delete deck and migrate flashcards", null, 500);
     }
 
-    return createErrorResponse(
-      "internal_error",
-      "Failed to delete deck",
-      null,
-      500
-    );
+    return createErrorResponse("internal_error", "Failed to delete deck", null, 500);
   }
 };
-
